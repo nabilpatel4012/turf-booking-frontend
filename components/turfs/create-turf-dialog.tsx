@@ -1,0 +1,403 @@
+"use client";
+
+import type React from "react";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MapPin } from "lucide-react";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { MapPickerDialog } from "./map-picker-dialog";
+
+interface CreateTurfDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}
+
+// Define the shape of the form data
+interface TurfFormData {
+  name: string;
+  description: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone: string;
+  status: string;
+  openingTime: string;
+  closingTime: string;
+  amenities: string;
+  latitude: string; // Stored as string from form/picker, converted to number for API
+  longitude: string; // Stored as string from form/picker, converted to number for API
+  images: string;
+}
+
+const initialFormData: TurfFormData = {
+  name: "",
+  description: "",
+  address: "",
+  city: "",
+  state: "",
+  zipCode: "",
+  phone: "",
+  status: "active",
+  openingTime: "06:00",
+  closingTime: "23:00",
+  amenities: "",
+  latitude: "", // Empty string means not set
+  longitude: "", // Empty string means not set
+  images: "",
+};
+
+export function CreateTurfDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: CreateTurfDialogProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [formData, setFormData] = useState<TurfFormData>(initialFormData);
+  const [mapOpen, setMapOpen] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const payload: { [key: string]: any } = {
+        ...formData,
+        amenities: formData.amenities
+          ? formData.amenities
+              .split(",")
+              .map((a) => a.trim().toLowerCase().replace(/ /g, "_"))
+              .filter(Boolean)
+          : [],
+        images: formData.images
+          ? formData.images
+              .split(",")
+              .map((url) => url.trim())
+              .filter(Boolean)
+          : [],
+        openingTime: `${formData.openingTime}:00`,
+        closingTime: `${formData.closingTime}:00`,
+      };
+
+      // ✅ CORE FIX/LOGIC CONFIRMATION:
+      // If latitude/longitude are non-empty strings, they are converted to
+      // numerical float values and added to the payload.
+      // If they are empty strings, they are omitted from the payload entirely.
+
+      if (formData.latitude) {
+        payload.latitude = parseFloat(formData.latitude);
+      } else {
+        delete payload.latitude; // Ensure it's not present if empty, though spreading formData won't include it if we manage the spread carefully. Explicitly delete for safety.
+      }
+
+      if (formData.longitude) {
+        payload.longitude = parseFloat(formData.longitude);
+      } else {
+        delete payload.longitude; // Explicitly delete for safety.
+      }
+
+      // We rely on the MapPickerDialog setting a stringified number or an empty string.
+      // The `delete` is added for explicit clarity, although not strictly necessary
+      // since the original `...formData` spread included it *as a string* and the
+      // `if` block only overrides it with a number.
+
+      const response = await fetch(getApiUrl("/turfs/admin/create"), {
+        method: "POST",
+        headers: getAuthHeaders(),
+        // Only spread the other properties, then explicitly add the coordinates
+        // to ensure type correctness and omission.
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create turf");
+      }
+
+      onSuccess();
+      onOpenChange(false);
+      setFormData(initialFormData);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Turf</DialogTitle>
+            <DialogDescription>
+              Add a new turf to your management system.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+            {/* ... other form fields (omitted for brevity) */}
+
+            {/* Required Fields (rest of the form remains unchanged) */}
+            <div className="space-y-2">
+              <Label htmlFor="name">Turf Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone *</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status *</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, status: value })
+                  }
+                  disabled={isLoading}
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address *</Label>
+              <Input
+                id="address"
+                value={formData.address}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">City *</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">State *</Label>
+                <Input
+                  id="state"
+                  value={formData.state}
+                  onChange={(e) =>
+                    setFormData({ ...formData, state: e.target.value })
+                  }
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zipCode">Zip Code</Label>
+                <Input
+                  id="zipCode"
+                  value={formData.zipCode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, zipCode: e.target.value })
+                  }
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {/* Map Picker Section */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="latitude">Latitude</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="latitude"
+                    type="number"
+                    value={formData.latitude}
+                    disabled
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setMapOpen(true)}
+                    className="flex items-center gap-1"
+                  >
+                    <MapPin className="h-4 w-4" /> Select
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="longitude">Longitude</Label>
+                <Input
+                  id="longitude"
+                  type="number"
+                  value={formData.longitude}
+                  disabled
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="openingTime">Opening Time *</Label>
+                <Input
+                  id="openingTime"
+                  type="time"
+                  value={formData.openingTime}
+                  onChange={(e) =>
+                    setFormData({ ...formData, openingTime: e.target.value })
+                  }
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="closingTime">Closing Time *</Label>
+                <Input
+                  id="closingTime"
+                  type="time"
+                  value={formData.closingTime}
+                  onChange={(e) =>
+                    setFormData({ ...formData, closingTime: e.target.value })
+                  }
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {/* Optional Fields */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                disabled={isLoading}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amenities">Amenities (comma-separated)</Label>
+              <Input
+                id="amenities"
+                value={formData.amenities}
+                onChange={(e) =>
+                  setFormData({ ...formData, amenities: e.target.value })
+                }
+                disabled={isLoading}
+                placeholder="parking, water"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="images">Image URLs (comma-separated)</Label>
+              <Textarea
+                id="images"
+                value={formData.images}
+                onChange={(e) =>
+                  setFormData({ ...formData, images: e.target.value })
+                }
+                disabled={isLoading}
+                placeholder="https://example.com/img1.jpg, ..."
+                rows={2}
+              />
+            </div>
+
+            {error && (
+              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                {error}
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Creating..." : "Create Turf"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Map Picker Modal */}
+      <MapPickerDialog
+        open={mapOpen}
+        onOpenChange={setMapOpen}
+        onSelect={(lat, lng) =>
+          setFormData({
+            ...formData,
+            // Ensure values are stored as strings to match form state/input expectation
+            latitude: lat.toString(),
+            longitude: lng.toString(),
+          })
+        }
+      />
+    </>
+  );
+}

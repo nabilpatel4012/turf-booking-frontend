@@ -1,0 +1,107 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { AnnouncementTable } from "@/components/announcements/announcement-table";
+import { AnnouncementTableSkeleton } from "@/components/announcements/announcement-table-skeleton";
+import { CreateAnnouncementDialog } from "@/components/announcements/create-announcement-dialog";
+import { EditAnnouncementDialog } from "@/components/announcements/edit-announcement-dialog";
+import { DeleteAnnouncementDialog } from "@/components/announcements/delete-announcement-dialog";
+import { Plus } from "lucide-react";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
+
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export default function AnnouncementsPage() {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] =
+    useState<Announcement | null>(null);
+
+  useEffect(() => {
+    fetchAnnouncements();
+  }, []);
+
+  const fetchAnnouncements = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(getApiUrl("/announcements"), {
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAnnouncements(data);
+      }
+    } catch (error) {
+      console.error("[v0] Failed to fetch announcements:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEdit = (announcement: Announcement) => {
+    setSelectedAnnouncement(announcement);
+    setEditDialogOpen(true);
+  };
+
+  const handleDelete = (announcement: Announcement) => {
+    setSelectedAnnouncement(announcement);
+    setDeleteDialogOpen(true);
+  };
+
+  return (
+    <div className="p-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Announcements</h1>
+          <p className="text-muted-foreground mt-2">
+            Manage announcements for your users
+          </p>
+        </div>
+        <Button onClick={() => setCreateDialogOpen(true)} disabled={isLoading}>
+          <Plus className="mr-2 h-4 w-4" />
+          Create Announcement
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <AnnouncementTableSkeleton />
+      ) : (
+        <AnnouncementTable
+          announcements={announcements}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      )}
+
+      <CreateAnnouncementDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={fetchAnnouncements}
+      />
+      <EditAnnouncementDialog
+        announcement={selectedAnnouncement}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={fetchAnnouncements}
+      />
+      <DeleteAnnouncementDialog
+        announcement={selectedAnnouncement}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onSuccess={fetchAnnouncements}
+      />
+    </div>
+  );
+}
