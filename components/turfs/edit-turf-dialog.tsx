@@ -27,25 +27,31 @@ import { getApiUrl, getAuthHeaders } from "@/lib/api";
 interface Turf {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   address: string;
   city: string;
   state: string;
   zipCode: string;
+  latitude: string;
+  longitude: string;
   phone: string;
+  images: string[];
+  amenities: string[];
   status: string;
   openingTime: string;
   closingTime: string;
-  amenities: string[];
-  latitude?: number;
-  longitude?: number;
-  images?: string[];
+  createdAt: string;
+  owner: Owner;
+}
+interface Owner {
+  id: string;
+  name: string;
 }
 
 interface EditTurfDialogProps {
   turf: Turf | null;
   open: boolean;
-  onOpenChange: (open: (open: boolean) => void) => void;
+  onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
 

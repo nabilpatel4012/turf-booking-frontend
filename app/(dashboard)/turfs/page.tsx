@@ -7,7 +7,7 @@ import { CreateTurfDialog } from "@/components/turfs/create-turf-dialog";
 import { EditTurfDialog } from "@/components/turfs/edit-turf-dialog";
 import { DeleteTurfDialog } from "@/components/turfs/delete-turf-dialog";
 import { Plus, Loader2, AlertCircle } from "lucide-react";
-import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Owner {
@@ -59,7 +59,7 @@ export default function TurfsPage() {
     setError(null);
 
     try {
-      const response = await fetch(getApiUrl("/turfs/admin/my-turfs"), {
+      const response = await fetchWithAuth(getApiUrl("/turfs/admin/my-turfs"), {
         headers: getAuthHeaders(),
       });
 

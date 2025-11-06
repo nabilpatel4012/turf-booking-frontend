@@ -12,11 +12,19 @@ import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
 interface Announcement {
   id: string;
+  turfId?: string | null;
   title: string;
-  content: string;
-  isActive: boolean;
+  message: string;
+  type: AnnouncementType;
+  expiresAt?: string | null;
   createdAt: string;
-  updatedAt: string;
+}
+enum AnnouncementType {
+  GENERAL = "general",
+  MAINTENANCE = "maintenance",
+  PROMOTION = "promotion",
+  CLOSURE = "closure",
+  TOURNAMENT = "tournament",
 }
 
 export default function AnnouncementsPage() {

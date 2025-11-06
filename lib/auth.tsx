@@ -3,7 +3,7 @@
 import type React from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { getApiUrl } from "./api";
+import { getApiUrl, fetchWithAuth } from "./api";
 import { Loader2 } from "lucide-react";
 
 interface User {
@@ -16,8 +16,9 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,71 +42,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [pathname]);
 
+  // Check if user is authenticated on mount
   useEffect(() => {
     if (!isMounted) return;
 
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        setUser({
-          id: payload.id || payload.sub,
-          email: payload.email,
-          name: payload.name,
-          role: payload.role,
-        });
-      } catch (error) {
-        console.error("[v0] Token decode error:", error);
-        localStorage.removeItem("token");
-      }
-    }
-    setIsLoading(false);
-
-    const refreshInterval = setInterval(() => {
-      const currentToken = localStorage.getItem("token");
-      if (currentToken) {
-        refreshToken(currentToken);
-      }
-    }, 14 * 60 * 1000);
-
-    return () => clearInterval(refreshInterval);
+    checkAuth();
   }, [isMounted]);
 
-  const refreshToken = async (token: string) => {
+  // Check authentication status by trying to refresh token
+  const checkAuth = async () => {
     try {
-      const response = await fetch(getApiUrl("/auth/refresh"), {
+      const response = await fetchWithAuth(getApiUrl("/auth/refresh-token"), {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        credentials: "include", // Send cookies
       });
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem("token", data.token);
-        try {
-          const payload = JSON.parse(atob(data.token.split(".")[1]));
-          setUser({
-            id: payload.id || payload.sub,
-            email: payload.email,
-            name: payload.name,
-            role: payload.role,
-          });
-        } catch (error) {
-          console.error("[v0] Token decode error:", error);
+        // User or admin data depending on role
+        const userData = data.user || data.admin;
+        if (userData) {
+          setUser(userData);
         }
       } else {
-        logout();
+        // Not authenticated or session expired
+        setUser(null);
       }
     } catch (error) {
-      console.error("[v0] Token refresh error:", error);
+      console.error("[Auth] Check auth error:", error);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // Refresh user data
+  const refreshUser = async () => {
+    await checkAuth();
   };
 
   const login = async (email: string, password: string) => {
     const response = await fetch(getApiUrl("/auth/admin/login"), {
       method: "POST",
+      credentials: "include", // Important: Send/receive cookies
       headers: {
         "Content-Type": "application/json",
       },
@@ -114,12 +93,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Login failed");
+      throw new Error(error.error || error.message || "Login failed");
     }
 
     const data = await response.json();
-    localStorage.setItem("token", data.token);
 
+    // Set user from response
     setUser({
       id: data.admin.id,
       email: data.admin.email,
@@ -136,10 +115,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, 50);
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    router.push("/login");
+  const logout = async () => {
+    try {
+      // Call logout endpoint to revoke session
+      await fetchWithAuth(getApiUrl("/auth/admin/logout"), {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("[Auth] Logout error:", error);
+    } finally {
+      // Clear user state regardless of API call success
+      setUser(null);
+      router.push("/login");
+    }
   };
 
   // Show loading state until mounted to prevent hydration issues
@@ -175,7 +164,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, isLoading, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

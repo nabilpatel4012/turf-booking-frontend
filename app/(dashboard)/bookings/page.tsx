@@ -6,7 +6,7 @@ import { BookingTable } from "@/components/bookings/booking-table";
 import { BookingTableSkeleton } from "@/components/bookings/booking-table-skeleton";
 import { CreateBookingDialog } from "@/components/bookings/create-booking-dialog";
 import { Plus } from "lucide-react";
-import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
@@ -74,7 +74,7 @@ export default function BookingsPage() {
   const fetchBookings = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(getApiUrl("/bookings"), {
+      const response = await fetchWithAuth(getApiUrl("/bookings"), {
         headers: getAuthHeaders(),
       });
 

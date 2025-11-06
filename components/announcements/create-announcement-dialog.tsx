@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 
 enum AnnouncementType {
   GENERAL = "general",
@@ -69,9 +69,12 @@ export function CreateAnnouncementDialog({
       if (!open) return;
       setIsFetchingTurfs(true);
       try {
-        const response = await fetch(getApiUrl("/turfs/admin/my-turfs"), {
-          headers: getAuthHeaders(),
-        });
+        const response = await fetchWithAuth(
+          getApiUrl("/turfs/admin/my-turfs"),
+          {
+            headers: getAuthHeaders(),
+          }
+        );
 
         if (response.ok) {
           const result: TurfsApiResponse = await response.json();
@@ -111,7 +114,7 @@ export function CreateAnnouncementDialog({
         payload.expiresAt = new Date(formData.expiresAt).toISOString();
       }
 
-      const response = await fetch(getApiUrl("/admin/announcements"), {
+      const response = await fetchWithAuth(getApiUrl("/admin/announcements"), {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(payload),

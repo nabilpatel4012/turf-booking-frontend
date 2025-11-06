@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MapPin } from "lucide-react";
-import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 import { MapPickerDialog } from "./map-picker-dialog";
 
 interface CreateTurfDialogProps {
@@ -100,11 +100,6 @@ export function CreateTurfDialog({
         closingTime: `${formData.closingTime}:00`,
       };
 
-      // ✅ CORE FIX/LOGIC CONFIRMATION:
-      // If latitude/longitude are non-empty strings, they are converted to
-      // numerical float values and added to the payload.
-      // If they are empty strings, they are omitted from the payload entirely.
-
       if (formData.latitude) {
         payload.latitude = parseFloat(formData.latitude);
       } else {
@@ -122,7 +117,7 @@ export function CreateTurfDialog({
       // since the original `...formData` spread included it *as a string* and the
       // `if` block only overrides it with a number.
 
-      const response = await fetch(getApiUrl("/turfs/admin/create"), {
+      const response = await fetchWithAuth(getApiUrl("/turfs/admin/create"), {
         method: "POST",
         headers: getAuthHeaders(),
         // Only spread the other properties, then explicitly add the coordinates

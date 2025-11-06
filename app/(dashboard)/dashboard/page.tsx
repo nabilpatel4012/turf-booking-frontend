@@ -15,7 +15,7 @@ import {
   AlertCircle,
   TrendingUp,
 } from "lucide-react";
-import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,7 +85,7 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      const response = await fetch(getApiUrl("/admin/stats"), {
+      const response = await fetchWithAuth(getApiUrl("/admin/stats"), {
         headers: getAuthHeaders(),
       });
 
