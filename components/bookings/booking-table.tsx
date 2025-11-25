@@ -240,7 +240,9 @@ export function BookingTable({
                     ) : (
                       <div className="flex justify-end gap-1">
                         <Button
+                          className="cursor-pointer"
                           variant="ghost"
+                          style={{ cursor: "pointer" }}
                           size="icon"
                           onClick={() => {
                             setSelectedBooking(booking);
@@ -251,7 +253,9 @@ export function BookingTable({
                         </Button>
                         {booking.status === "pending" && (
                           <Button
+                            className="cursor-pointer"
                             variant="ghost"
+                            style={{ cursor: "pointer" }}
                             size="icon"
                             onClick={() => handleAction(booking.id, "confirm")}
                           >
@@ -261,7 +265,9 @@ export function BookingTable({
                         {(booking.status === "confirmed" ||
                           booking.status === "active") && (
                           <Button
+                            className="cursor-pointer"
                             variant="ghost"
+                            style={{ cursor: "pointer" }}
                             size="icon"
                             onClick={() => handleAction(booking.id, "complete")}
                           >
@@ -272,7 +278,9 @@ export function BookingTable({
                           booking.status === "active" ||
                           booking.status === "confirmed") && (
                           <Button
+                            className="cursor-pointer"
                             variant="ghost"
+                            style={{ cursor: "pointer" }}
                             size="icon"
                             onClick={() => {
                               setSelectedBooking(booking);
