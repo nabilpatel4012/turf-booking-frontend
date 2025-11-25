@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 
 // FIX: Updated interface to remove the user object
 interface Booking {
@@ -39,7 +39,7 @@ export function CancelBookingDialog({
 
     try {
       // The API endpoint remains the same
-      const response = await fetch(
+      const response = await fetchWithAuth(
         getApiUrl(`/bookings/${booking.id}/cancel`),
         {
           method: "POST",

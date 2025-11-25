@@ -30,7 +30,7 @@ import {
 import { Input } from "../ui/input";
 import { Booking } from "@/app/(dashboard)/bookings/page";
 import { useToast } from "../ui/use-toast";
-import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 
 interface BookingTableProps {
   bookings: Booking[];
@@ -73,6 +73,12 @@ export function BookingTable({
             Pending
           </Badge>
         );
+      case "confirmed":
+        return (
+          <Badge className="bg-purple-500/10 text-purple-500 hover:bg-purple-500/20">
+            Confirmed
+          </Badge>
+        );
       case "active":
         return (
           <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20">
@@ -94,6 +100,25 @@ export function BookingTable({
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+
+  const getPaymentBadge = (booking: Booking) => {
+    if (booking.paymentId) {
+      return (
+        <Badge className="bg-green-500/10 text-green-500 text-xs">Paid</Badge>
+      );
+    } else if (booking.orderId) {
+      return (
+        <Badge className="bg-yellow-500/10 text-yellow-500 text-xs">
+          Pending
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="outline" className="text-xs">
+        Not Initiated
+      </Badge>
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -118,7 +143,7 @@ export function BookingTable({
   ) => {
     setIsUpdating(bookingId);
     try {
-      const response = await fetch(
+      const response = await fetchWithAuth(
         getApiUrl(`/bookings/admin/${bookingId}/${action}`),
         {
           method: "PATCH",
@@ -158,7 +183,6 @@ export function BookingTable({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="w-full sm:max-w-sm placeholder:text-sm"
-          style={{}}
         />
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
           <SelectTrigger className="w-full sm:w-[180px]">
@@ -185,6 +209,7 @@ export function BookingTable({
               <TableHead>Date & Time</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Payment</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -208,6 +233,7 @@ export function BookingTable({
                     ₹{Number.parseFloat(booking.price).toLocaleString("en-IN")}
                   </TableCell>
                   <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                  <TableCell>{getPaymentBadge(booking)}</TableCell>
                   <TableCell className="text-right">
                     {isUpdating === booking.id ? (
                       <Loader2 className="h-5 w-5 animate-spin ml-auto" />
@@ -263,7 +289,7 @@ export function BookingTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No bookings match your current filters.
                 </TableCell>
               </TableRow>
@@ -287,7 +313,10 @@ export function BookingTable({
                     {booking.id.slice(0, 8)}...
                   </p>
                 </div>
-                {getStatusBadge(booking.status)}
+                <div className="flex flex-col gap-1 items-end">
+                  {getStatusBadge(booking.status)}
+                  {getPaymentBadge(booking)}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-sm">
@@ -311,6 +340,23 @@ export function BookingTable({
                   {formatTime(booking.endTime)}
                 </p>
               </div>
+
+              {(booking.orderId || booking.paymentId) && (
+                <div className="text-xs">
+                  {booking.orderId && (
+                    <p className="text-muted-foreground">
+                      Order:{" "}
+                      <span className="font-mono">{booking.orderId}</span>
+                    </p>
+                  )}
+                  {booking.paymentId && (
+                    <p className="text-muted-foreground">
+                      Payment:{" "}
+                      <span className="font-mono">{booking.paymentId}</span>
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-2 pt-2">
                 {isUpdating === booking.id ? (

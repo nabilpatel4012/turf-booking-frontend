@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
+import type React from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,60 +9,64 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { getApiUrl, getAuthHeaders } from "@/lib/api"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 
 interface CreateBookingDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSuccess: () => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
 }
 
-export function CreateBookingDialog({ open, onOpenChange, onSuccess }: CreateBookingDialogProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+export function CreateBookingDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: CreateBookingDialogProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     userId: "",
     date: "",
     startTime: "",
     endTime: "",
     price: "",
-  })
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
     try {
-      const response = await fetch(getApiUrl("/bookings"), {
+      const response = await fetchWithAuth(getApiUrl("/bookings"), {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(formData),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to create booking")
+        throw new Error("Failed to create booking");
       }
 
-      onSuccess()
-      onOpenChange(false)
+      onSuccess();
+      onOpenChange(false);
       setFormData({
         userId: "",
         date: "",
         startTime: "",
         endTime: "",
         price: "",
-      })
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create booking")
+      setError(err instanceof Error ? err.message : "Failed to create booking");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -77,7 +81,9 @@ export function CreateBookingDialog({ open, onOpenChange, onSuccess }: CreateBoo
             <Input
               id="userId"
               value={formData.userId}
-              onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, userId: e.target.value })
+              }
               required
               disabled={isLoading}
             />
@@ -88,7 +94,9 @@ export function CreateBookingDialog({ open, onOpenChange, onSuccess }: CreateBoo
               id="date"
               type="date"
               value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, date: e.target.value })
+              }
               required
               disabled={isLoading}
             />
@@ -100,7 +108,9 @@ export function CreateBookingDialog({ open, onOpenChange, onSuccess }: CreateBoo
                 id="startTime"
                 type="time"
                 value={formData.startTime}
-                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, startTime: e.target.value })
+                }
                 required
                 disabled={isLoading}
               />
@@ -111,7 +121,9 @@ export function CreateBookingDialog({ open, onOpenChange, onSuccess }: CreateBoo
                 id="endTime"
                 type="time"
                 value={formData.endTime}
-                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, endTime: e.target.value })
+                }
                 required
                 disabled={isLoading}
               />
@@ -123,14 +135,25 @@ export function CreateBookingDialog({ open, onOpenChange, onSuccess }: CreateBoo
               id="price"
               type="number"
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, price: e.target.value })
+              }
               required
               disabled={isLoading}
             />
           </div>
-          {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+          {error && (
+            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+              {error}
+            </div>
+          )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
@@ -140,5 +163,5 @@ export function CreateBookingDialog({ open, onOpenChange, onSuccess }: CreateBoo
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

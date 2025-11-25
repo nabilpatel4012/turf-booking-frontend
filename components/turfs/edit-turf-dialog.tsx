@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 
 // Interface remains comprehensive
 interface Turf {
@@ -168,11 +168,14 @@ export function EditTurfDialog({
       }
       // If latitude or longitude are empty strings (""), they are not added to the payload.
 
-      const response = await fetch(getApiUrl(`/turfs/admin/${turf.id}`), {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-      });
+      const response = await fetchWithAuth(
+        getApiUrl(`/turfs/admin/${turf.id}`),
+        {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();

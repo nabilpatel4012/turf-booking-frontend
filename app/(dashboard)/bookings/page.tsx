@@ -18,12 +18,16 @@ export interface Booking {
   startTime: string;
   endTime: string;
   price: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
+  status: "pending" | "confirmed" | "active" | "completed" | "cancelled";
   createdBy: string;
   cancelledAt: string | null;
   cancellationReason: string | null;
+  paymentId: string | null;
+  orderId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  userName?: string;
+  turfName?: string;
 }
 
 interface BookingsApiResponse {

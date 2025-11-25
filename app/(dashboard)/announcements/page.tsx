@@ -8,7 +8,7 @@ import { CreateAnnouncementDialog } from "@/components/announcements/create-anno
 import { EditAnnouncementDialog } from "@/components/announcements/edit-announcement-dialog";
 import { DeleteAnnouncementDialog } from "@/components/announcements/delete-announcement-dialog";
 import { Plus } from "lucide-react";
-import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 
 interface Announcement {
   id: string;
@@ -43,7 +43,7 @@ export default function AnnouncementsPage() {
   const fetchAnnouncements = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(getApiUrl("/announcements"), {
+      const response = await fetchWithAuth(getApiUrl("/announcements"), {
         headers: getAuthHeaders(),
       });
 
