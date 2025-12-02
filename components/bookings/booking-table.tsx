@@ -215,7 +215,7 @@ export function BookingTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bookings.length > 0 ? (
+            {Array.isArray(bookings) && bookings.length > 0 ? (
               bookings.map((booking) => (
                 <TableRow key={booking.id}>
                   <TableCell className="font-mono text-sm">

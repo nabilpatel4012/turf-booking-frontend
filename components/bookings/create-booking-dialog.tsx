@@ -184,7 +184,7 @@ export function CreateBookingDialog({
                 <SelectValue placeholder="Select a turf" />
               </SelectTrigger>
               <SelectContent>
-                {turfs.map((turf) => (
+                {Array.isArray(turfs) && turfs.map((turf) => (
                   <SelectItem key={turf.id} value={turf.id}>
                     {turf.name}
                   </SelectItem>
