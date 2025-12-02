@@ -120,16 +120,26 @@ export function PricingEditor({ turfId }: PricingEditorProps) {
   };
 
   const handleSave = async () => {
+    // Check if user typed in the form but didn't click Add Rule
+    if (newRule.price > 0 || newRule.startTime !== "09:00" || newRule.endTime !== "18:00") {
+      toast.warning("You have unsaved details in the 'Add New Rule' form. Click 'Add Rule' first if you want to include it.");
+      return;
+    }
+
+    if (rules.length === 0) {
+      // Allow saving empty rules (clearing pricing), but ask for confirmation or just proceed?
+      // The user complained about "not sending any payload", implying they WANTED to send something.
+      // So if rules are empty, we should probably warn them unless they explicitly want to clear.
+      // For now, let's just proceed but maybe show a message if it was unintentional?
+      // Actually, let's just let it pass if they really want to clear, but the form check above handles the "forgot to add" case.
+    }
+
     setSaving(true);
     try {
       const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}/pricing/admin/update`,
         {
           method: "PUT",
-        //   headers: {
-        //     "Content-Type": "application/json",
-        //     Authorization: `Bearer ${token}`,
-        //   },
           body: JSON.stringify({
             turfId,
             rules,
