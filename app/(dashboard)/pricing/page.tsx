@@ -7,6 +7,7 @@ import { PricingEditor } from "@/components/pricing/pricing-editor";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { fetchWithAuth } from "@/lib/api";
 
 interface Turf {
   id: string;
@@ -29,7 +30,7 @@ export default function PricingPage() {
 
   const fetchTurfs = async () => {
     try {
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}/turfs/admin/my-turfs`,
         // {
         //   headers: {

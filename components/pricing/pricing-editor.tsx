@@ -22,6 +22,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Plus, Trash2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { fetchWithAuth } from "@/lib/api";
 
 interface PricingRule {
   dayType?: "weekday" | "weekend";
@@ -59,7 +60,7 @@ export function PricingEditor({ turfId }: PricingEditorProps) {
 
   const fetchPricing = async () => {
     try {
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}/pricing?turfId=${turfId}`,
         // {
         //   headers: {
@@ -121,7 +122,7 @@ export function PricingEditor({ turfId }: PricingEditorProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}/pricing/admin/update`,
         {
           method: "PUT",
