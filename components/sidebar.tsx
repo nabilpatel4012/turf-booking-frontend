@@ -13,6 +13,7 @@ import {
   LogOut,
   Loader2,
   Shield,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useTransition } from "react";
@@ -22,6 +23,7 @@ const navigation = [
   { name: "Bookings", href: "/bookings", icon: Calendar },
   { name: "Turfs", href: "/turfs", icon: MapPin },
   { name: "Announcements", href: "/announcements", icon: Megaphone },
+  { name: "Pricing", href: "/pricing", icon: DollarSign },
   { name: "Tournaments", href: "/tournaments", icon: Trophy, disabled: true },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "Sessions", href: "/sessions", icon: Shield }, // ✅ Added sessions route here
