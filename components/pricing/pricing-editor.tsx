@@ -139,7 +139,7 @@ export function PricingEditor({ turfId }: PricingEditorProps) {
       const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}/pricing/admin/update`,
         {
-          method: "PUT",
+          method: "POST",
           body: JSON.stringify({
             turfId,
             rules,
