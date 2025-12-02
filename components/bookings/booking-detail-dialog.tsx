@@ -85,21 +85,12 @@ export function BookingDetailDialog({
     if (open) {
       fetchAdditionalData();
     }
-  }, [open, booking.userId, booking.turfId]);
+  }, [open, booking.turfId]);
 
   const fetchAdditionalData = async () => {
     setLoading(true);
     try {
-      // Fetch user data
-      const userResponse = await fetchWithAuth(
-        getApiUrl(`/users/${booking.userId}`)
-      );
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        setUserData(userData.data || userData);
-      }
-
-      // Fetch turf data
+      // Fetch turf data for location and price details which are not in the booking view
       const turfResponse = await fetchWithAuth(
         getApiUrl(`/turfs/${booking.turfId}`)
       );
@@ -190,19 +181,19 @@ export function BookingDetailDialog({
                 <div>
                   <p className="text-sm text-muted-foreground">Name</p>
                   <p className="mt-1 font-medium">
-                    {userData?.name || "Loading..."}
+                    {booking.userName || "Unknown"}
                   </p>
                 </div>
-                {userData?.email && (
+                {booking.userEmail && (
                   <div>
                     <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="mt-1 text-sm">{userData.email}</p>
+                    <p className="mt-1 text-sm">{booking.userEmail}</p>
                   </div>
                 )}
-                {userData?.phone && (
+                {booking.userPhone && (
                   <div>
                     <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="mt-1 text-sm">{userData.phone}</p>
+                    <p className="mt-1 text-sm">{booking.userPhone}</p>
                   </div>
                 )}
               </div>
@@ -219,7 +210,7 @@ export function BookingDetailDialog({
                 <div>
                   <p className="text-sm text-muted-foreground">Turf Name</p>
                   <p className="mt-1 font-medium">
-                    {turfData?.name || "Loading..."}
+                    {booking.turfName || turfData?.name || "Loading..."}
                   </p>
                 </div>
                 {turfData?.location && (

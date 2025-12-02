@@ -27,6 +27,8 @@ export interface Booking {
   createdAt: string;
   updatedAt: string;
   userName?: string;
+  userPhone?: string;
+  userEmail?: string;
   turfName?: string;
 }
 

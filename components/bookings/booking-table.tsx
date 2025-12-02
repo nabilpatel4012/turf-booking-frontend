@@ -204,13 +204,12 @@ export function BookingTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Booking ID</TableHead>
+              <TableHead className="w-[80px]">ID</TableHead>
               <TableHead>Turf</TableHead>
               <TableHead>User</TableHead>
-              <TableHead>Date & Time</TableHead>
-              <TableHead>Price</TableHead>
+              <TableHead>Schedule</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Payment</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -218,29 +217,45 @@ export function BookingTable({
             {Array.isArray(bookings) && bookings.length > 0 ? (
               bookings.map((booking) => (
                 <TableRow key={booking.id}>
-                  <TableCell className="font-mono text-sm">
-                    {booking.id.slice(0, 8)}...
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {booking.id.slice(0, 6)}
                   </TableCell>
-                  <TableCell>{booking.turfName || "Unknown Turf"}</TableCell>
+                  <TableCell className="font-medium">
+                    {booking.turfName || "Unknown Turf"}
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span className="font-medium">{booking.userName || "Unknown User"}</span>
-                      {/* <span className="text-xs text-muted-foreground">{booking.userId.slice(0, 8)}...</span> */}
+                      <span className="font-medium text-sm">
+                        {booking.userName || "Guest"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {booking.userPhone || "-"}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    {formatDate(booking.date)}
-                    <br />
-                    <span className="text-xs text-muted-foreground">
-                      {formatTime(booking.startTime)} -{" "}
-                      {formatTime(booking.endTime)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    ₹{Number.parseFloat(booking.price).toLocaleString("en-IN")}
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">
+                        {formatDate(booking.date)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatTime(booking.startTime)} -{" "}
+                        {formatTime(booking.endTime)}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                  <TableCell>{getPaymentBadge(booking)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="font-medium">
+                        ₹
+                        {Number.parseFloat(booking.price).toLocaleString(
+                          "en-IN"
+                        )}
+                      </span>
+                      {getPaymentBadge(booking)}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right">
                     {isUpdating === booking.id ? (
                       <Loader2 className="h-5 w-5 animate-spin ml-auto" />
@@ -249,7 +264,6 @@ export function BookingTable({
                         <Button
                           className="cursor-pointer"
                           variant="ghost"
-                          style={{ cursor: "pointer" }}
                           size="icon"
                           onClick={() => {
                             setSelectedBooking(booking);
@@ -262,7 +276,6 @@ export function BookingTable({
                           <Button
                             className="cursor-pointer"
                             variant="ghost"
-                            style={{ cursor: "pointer" }}
                             size="icon"
                             onClick={() => handleAction(booking.id, "confirm")}
                           >
@@ -274,7 +287,6 @@ export function BookingTable({
                           <Button
                             className="cursor-pointer"
                             variant="ghost"
-                            style={{ cursor: "pointer" }}
                             size="icon"
                             onClick={() => handleAction(booking.id, "complete")}
                           >
@@ -287,7 +299,6 @@ export function BookingTable({
                           <Button
                             className="cursor-pointer"
                             variant="ghost"
-                            style={{ cursor: "pointer" }}
                             size="icon"
                             onClick={() => {
                               setSelectedBooking(booking);
@@ -304,7 +315,7 @@ export function BookingTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No bookings match your current filters.
                 </TableCell>
               </TableRow>
