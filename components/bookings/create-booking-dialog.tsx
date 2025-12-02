@@ -80,9 +80,9 @@ export function CreateBookingDialog({
       });
       if (response.ok) {
         const data = await response.json();
-        setTurfs(data);
-        if (data.length > 0 && !formData.turfId) {
-          setFormData((prev) => ({ ...prev, turfId: data[0].id }));
+        setTurfs(data.data);
+        if (data.data.length > 0 && !formData.turfId) {
+          setFormData((prev) => ({ ...prev, turfId: data.data[0].id }));
         }
       }
     } catch (error) {
