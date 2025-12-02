@@ -148,190 +148,123 @@ export function BookingDetailDialog({
           </div>
         ) : (
           <div className="space-y-6 py-4">
-            {/* Basic Information */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-              <div>
-                <p className="text-sm text-muted-foreground">Booking ID</p>
-                <p className="font-mono text-sm mt-1">{booking.id}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <div className="mt-1">{getStatusBadge(booking.status)}</div>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Created By</p>
-                <p className="mt-1 font-medium">{booking.createdBy}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Created At</p>
-                <p className="mt-1 text-sm">
-                  {formatDateTime(booking.createdAt)}
-                </p>
+
+            {/* Header: Status & Main Info */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    {booking.turfName || turfData?.name || "Turf Booking"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDate(booking.date)} • {formatTime(booking.startTime)}{" "}
+                    - {formatTime(booking.endTime)}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  {getStatusBadge(booking.status)}
+                  <span className="text-xs text-muted-foreground font-mono">
+                    #{booking.id.slice(0, 8)}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* User Information */}
-            <div className="border-t border-border pt-4">
-              <h3 className="font-semibold mb-3">User Information</h3>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-                <div>
-                  <p className="text-sm text-muted-foreground">User ID</p>
-                  <p className="font-mono text-sm mt-1">{booking.userId}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Name</p>
-                  <p className="mt-1 font-medium">
-                    {booking.userName || "Unknown"}
-                  </p>
-                </div>
-                {booking.userEmail && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* User Details */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  User Details
+                </h4>
+                <div className="bg-muted/30 p-3 rounded-md space-y-2">
                   <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="mt-1 text-sm">{booking.userEmail}</p>
-                  </div>
-                )}
-                {booking.userPhone && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="mt-1 text-sm">{booking.userPhone}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Turf Information */}
-            <div className="border-t border-border pt-4">
-              <h3 className="font-semibold mb-3">Turf Information</h3>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-                <div>
-                  <p className="text-sm text-muted-foreground">Turf ID</p>
-                  <p className="font-mono text-sm mt-1">{booking.turfId}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Turf Name</p>
-                  <p className="mt-1 font-medium">
-                    {booking.turfName || turfData?.name || "Loading..."}
-                  </p>
-                </div>
-                {turfData?.location && (
-                  <div className="col-span-2">
-                    <p className="text-sm text-muted-foreground">Location</p>
-                    <p className="mt-1 text-sm">{turfData.location}</p>
-                  </div>
-                )}
-                {turfData?.pricePerHour && (
-                  <div>
+                    <p className="font-medium">
+                      {booking.userName || "Guest User"}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      Price per Hour
+                      {booking.userPhone || "No phone provided"}
                     </p>
-                    <p className="mt-1 text-sm">
-                      ₹
-                      {Number.parseFloat(turfData.pricePerHour).toLocaleString(
-                        "en-IN"
-                      )}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Booking Information */}
-            <div className="border-t border-border pt-4">
-              <h3 className="font-semibold mb-3">Booking Details</h3>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-                <div>
-                  <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="mt-1">{formatDate(booking.date)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Time Slot</p>
-                  <p className="mt-1">
-                    {formatTime(booking.startTime)} -{" "}
-                    {formatTime(booking.endTime)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Price</p>
-                  <p className="mt-1 font-semibold text-lg">
-                    ₹{Number.parseFloat(booking.price).toLocaleString("en-IN")}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Last Updated</p>
-                  <p className="mt-1 text-sm">
-                    {formatDateTime(booking.updatedAt)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Information */}
-            {(booking.orderId || booking.paymentId) && (
-              <div className="border-t border-border pt-4">
-                <h3 className="font-semibold mb-3">Payment Information</h3>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-                  {booking.orderId && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Order ID</p>
-                      <p className="font-mono text-sm mt-1">
-                        {booking.orderId}
-                      </p>
-                    </div>
-                  )}
-                  {booking.paymentId && (
-                    <div>
+                    {booking.userEmail && (
                       <p className="text-sm text-muted-foreground">
-                        Payment ID
+                        {booking.userEmail}
                       </p>
-                      <p className="font-mono text-sm mt-1">
-                        {booking.paymentId}
-                      </p>
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Payment Status
-                    </p>
-                    <p className="mt-1">
-                      {booking.paymentId ? (
-                        <Badge className="bg-green-500/10 text-green-500">
-                          Paid
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-yellow-500/10 text-yellow-500">
-                          Pending
-                        </Badge>
-                      )}
-                    </p>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Cancellation Details */}
-            {booking.status === "cancelled" && (
-              <div className="border-t border-border pt-4">
-                <h3 className="font-semibold mb-3 text-destructive">
-                  Cancellation Details
-                </h3>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Cancelled At
+              {/* Payment Details */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  Payment
+                </h4>
+                <div className="bg-muted/30 p-3 rounded-md space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Total Amount</span>
+                    <span className="font-bold text-lg">
+                      ₹
+                      {Number.parseFloat(booking.price).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Status</span>
+                    {booking.paymentId ? (
+                      <Badge
+                        variant="outline"
+                        className="text-green-600 border-green-200 bg-green-50"
+                      >
+                        Paid
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-yellow-600 border-yellow-200 bg-yellow-50"
+                      >
+                        Pending
+                      </Badge>
+                    )}
+                  </div>
+                  {booking.paymentId && (
+                    <div className="pt-2 border-t border-border/50 mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        Payment ID:{" "}
+                        <span className="font-mono">{booking.paymentId}</span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Info / Cancellation */}
+            {(booking.status === "cancelled" || turfData?.location) && (
+              <div className="space-y-3 border-t pt-4">
+                {booking.status === "cancelled" && (
+                  <div className="bg-destructive/10 p-3 rounded-md border border-destructive/20">
+                    <h4 className="text-sm font-medium text-destructive mb-1">
+                      Cancellation Info
+                    </h4>
+                    <p className="text-sm">
+                      <span className="font-medium">Reason:</span>{" "}
+                      {booking.cancellationReason || "No reason provided"}
                     </p>
-                    <p className="mt-1 text-sm">
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Cancelled at:{" "}
                       {booking.cancelledAt
                         ? formatDateTime(booking.cancelledAt)
                         : "-"}
                     </p>
                   </div>
-                  <div className="col-span-2">
-                    <p className="text-sm text-muted-foreground">Reason</p>
-                    <p className="mt-1">
-                      {booking.cancellationReason || "No reason provided"}
-                    </p>
+                )}
+
+                {turfData?.location && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                      Turf Location
+                    </h4>
+                    <p className="text-sm">{turfData.location}</p>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
