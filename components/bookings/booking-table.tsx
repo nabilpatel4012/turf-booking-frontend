@@ -205,7 +205,8 @@ export function BookingTable({
           <TableHeader>
             <TableRow>
               <TableHead>Booking ID</TableHead>
-              <TableHead>Created By</TableHead>
+              <TableHead>Turf</TableHead>
+              <TableHead>User</TableHead>
               <TableHead>Date & Time</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Status</TableHead>
@@ -220,7 +221,13 @@ export function BookingTable({
                   <TableCell className="font-mono text-sm">
                     {booking.id.slice(0, 8)}...
                   </TableCell>
-                  <TableCell>{booking.createdBy}</TableCell>
+                  <TableCell>{booking.turfName || "Unknown Turf"}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{booking.userName || "Unknown User"}</span>
+                      {/* <span className="text-xs text-muted-foreground">{booking.userId.slice(0, 8)}...</span> */}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     {formatDate(booking.date)}
                     <br />
@@ -297,7 +304,7 @@ export function BookingTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   No bookings match your current filters.
                 </TableCell>
               </TableRow>
@@ -329,8 +336,12 @@ export function BookingTable({
 
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <p className="text-xs text-muted-foreground">Created By</p>
-                  <p className="font-medium">{booking.createdBy}</p>
+                  <p className="text-xs text-muted-foreground">Turf</p>
+                  <p className="font-medium">{booking.turfName || "Unknown"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">User</p>
+                  <p className="font-medium">{booking.userName || "Unknown"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Price</p>
