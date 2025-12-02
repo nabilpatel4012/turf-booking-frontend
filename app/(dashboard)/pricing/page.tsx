@@ -30,7 +30,7 @@ export default function PricingPage() {
   const fetchTurfs = async () => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/turfs/my-turfs`,
+        `${process.env.NEXT_PUBLIC_API_URL}/turfs/admin/my-turfs`,
         // {
         //   headers: {
         //     Authorization: `Bearer ${token}`,
