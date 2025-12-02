@@ -1,7 +1,5 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
-// For cookie-based authentication, we don't need to manually set Authorization headers
-// The browser automatically includes HTTP-only cookies
 export function getAuthHeaders(): HeadersInit {
   return {
     "Content-Type": "application/json",
@@ -42,16 +40,60 @@ export async function fetchWithAuth(
       response = await fetch(url, fetchOptions);
     } else {
       console.log("[Auth] Refresh failed, user needs to login again");
-      // Refresh failed, let the caller handle it
-      // (typically redirect to login)
+      // Optional: window.location.href = "/login";
     }
   }
 
   return response;
 }
 
-// Legacy function for backward compatibility
-// Use fetchWithAuth instead for new code
+// Legacy function
 export async function apiFetch(path: string, options: RequestInit = {}) {
   return fetchWithAuth(getApiUrl(path), options);
+}
+
+// --- NEW HELPER FUNCTIONS ---
+
+/**
+ * Helper for GET requests
+ */
+export async function get(path: string, options: RequestInit = {}) {
+  return fetchWithAuth(getApiUrl(path), {
+    ...options,
+    method: "GET",
+  });
+}
+
+/**
+ * Helper for POST requests
+ * Automatically stringifies the body
+ */
+export async function post(path: string, data: any, options: RequestInit = {}) {
+  return fetchWithAuth(getApiUrl(path), {
+    ...options,
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Helper for PUT requests
+ * Automatically stringifies the body
+ */
+export async function put(path: string, data: any, options: RequestInit = {}) {
+  return fetchWithAuth(getApiUrl(path), {
+    ...options,
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Helper for DELETE requests
+ */
+export async function del(path: string, options: RequestInit = {}) {
+  return fetchWithAuth(getApiUrl(path), {
+    ...options,
+    method: "DELETE",
+  });
 }
