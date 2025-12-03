@@ -227,7 +227,7 @@ export default function SettingsPage() {
   const fetchTurfs = async () => {
     setLoading("turfs", true);
     try {
-      const res = await fetchWithAuth(getApiUrl("/turfs"));
+      const res = await fetchWithAuth(getApiUrl("admin/my-turfs"));
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch turfs");
       setTurfs(data.data);

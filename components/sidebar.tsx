@@ -14,6 +14,7 @@ import {
   Loader2,
   Shield,
   DollarSign,
+  QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useTransition } from "react";
@@ -26,7 +27,8 @@ const navigation = [
   { name: "Pricing", href: "/pricing", icon: DollarSign },
   { name: "Tournaments", href: "/tournaments", icon: Trophy, disabled: true },
   { name: "Settings", href: "/settings", icon: Settings },
-  { name: "Sessions", href: "/sessions", icon: Shield }, // ✅ Added sessions route here
+  { name: "Sessions", href: "/sessions", icon: Shield },
+  { name: "Scanner", href: "/scanner", icon: QrCode },
 ];
 
 export function Sidebar() {
