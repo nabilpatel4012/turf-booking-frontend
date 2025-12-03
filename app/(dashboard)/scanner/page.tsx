@@ -1,12 +1,35 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  RefreshCw,
+  Camera,
+  MoreVertical,
+  Upload,
+  Image as ImageIcon,
+} from "lucide-react";
 import { get } from "@/lib/api";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface VerificationResult {
   valid: boolean;
@@ -15,58 +38,100 @@ interface VerificationResult {
   paymentStatus?: string;
 }
 
+interface CameraDevice {
+  id: string;
+  label: string;
+}
+
 export default function ScannerPage() {
-  const [scanning, setScanning] = useState(true);
+  const [scanning, setScanning] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState<VerificationResult | null>(null);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const [cameras, setCameras] = useState<CameraDevice[]>([]);
+  const [selectedCamera, setSelectedCamera] = useState<string>("");
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Initialize scanner only if we are in scanning mode and haven't initialized yet
-    if (scanning && !scannerRef.current) {
-      const scanner = new Html5QrcodeScanner(
-        "reader",
+    // Initialize scanner instance
+    if (!scannerRef.current) {
+      scannerRef.current = new Html5Qrcode("reader", {
+        verbose: false,
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
+      });
+    }
+
+    // Get cameras
+    Html5Qrcode.getCameras()
+      .then((devices) => {
+        if (devices && devices.length) {
+          setCameras(devices.map(d => ({ id: d.id, label: d.label || `Camera ${d.id.slice(0, 5)}...` })));
+          setSelectedCamera(devices[0].id);
+          setPermissionGranted(true);
+        }
+      })
+      .catch((err) => {
+        console.error("Error getting cameras", err);
+        // toast.error("Camera permission denied or no cameras found");
+      });
+
+    return () => {
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().catch(console.error);
+      }
+    };
+  }, []);
+
+  const startScanning = async () => {
+    if (!scannerRef.current || !selectedCamera) return;
+
+    try {
+      await scannerRef.current.start(
+        selectedCamera,
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
         },
-        /* verbose= */ false
+        (decodedText) => onScanSuccess(decodedText),
+        (errorMessage) => {
+          // ignore failures during scanning
+        }
       );
-
-      scanner.render(onScanSuccess, onScanFailure);
-      scannerRef.current = scanner;
+      setScanning(true);
+      setResult(null);
+    } catch (err) {
+      console.error("Error starting scanner", err);
+      toast.error("Failed to start camera");
     }
+  };
 
-    // Cleanup function
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(console.error);
-        scannerRef.current = null;
-      }
-    };
-  }, [scanning]);
+  const stopScanning = async () => {
+    if (!scannerRef.current) return;
+    try {
+        if (scannerRef.current.isScanning) {
+            await scannerRef.current.stop();
+        }
+      setScanning(false);
+    } catch (err) {
+      console.error("Error stopping scanner", err);
+    }
+  };
 
-  const onScanSuccess = async (decodedText: string, decodedResult: any) => {
-    if (verifying) return; // Prevent multiple calls
+  const onScanSuccess = async (decodedText: string) => {
+    if (verifying) return;
 
     try {
-      // Pause scanning
-      if (scannerRef.current) {
-        scannerRef.current.pause();
-      }
-      
+      await stopScanning();
       setVerifying(true);
-      setScanning(false); // Switch to result view
 
       // Parse URL parameters
-      // Expected URL: BASE_URL/bookings/verify-qr?bookingId=...&turfId=...
-      // We can just extract the query parameters part
       let params = "";
       if (decodedText.includes("?")) {
         params = decodedText.split("?")[1];
       } else {
-        // Fallback if it's just the params string
         params = decodedText;
       }
 
@@ -80,7 +145,6 @@ export default function ScannerPage() {
         throw new Error("Invalid QR Code: Missing Turf ID");
       }
 
-      // Call Verification API
       const response = await get(
         `/bookings/verify-qr?turfId=${turfId}&bookingId=${bookingId || ""}&orderId=${orderId || ""}&paymentId=${paymentId || ""}`
       );
@@ -92,7 +156,6 @@ export default function ScannerPage() {
 
       const data = await response.json();
       setResult(data);
-      
     } catch (error: any) {
       console.error("Verification Error:", error);
       setResult({
@@ -102,47 +165,154 @@ export default function ScannerPage() {
       });
     } finally {
       setVerifying(false);
-      // Clear scanner instance so it can be re-initialized if needed
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(console.error);
-        scannerRef.current = null;
-      }
     }
   };
 
-  const onScanFailure = (error: any) => {
-    // console.warn(`Code scan error = ${error}`);
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !scannerRef.current) return;
+
+    setVerifying(true);
+    setResult(null);
+    setScanning(false);
+
+    scannerRef.current
+      .scanFile(file, true)
+      .then((decodedText) => {
+        onScanSuccess(decodedText);
+      })
+      .catch((err) => {
+        console.error("Error scanning file", err);
+        toast.error("Could not read QR code from image");
+        setVerifying(false);
+      });
+      
+    // Reset input
+    e.target.value = "";
   };
 
   const handleReset = () => {
     setResult(null);
-    setScanning(true);
-    setVerifying(false);
+    startScanning();
   };
 
   return (
     <div className="container mx-auto p-4 max-w-md">
-      <h1 className="text-2xl font-bold mb-6 text-center">QR Scanner</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">QR Scanner</h1>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+              <ImageIcon className="mr-2 h-4 w-4" />
+              Scan Image
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleFileUpload}
+      />
 
       <Card>
         <CardContent className="p-6">
-          {scanning ? (
-            <div className="flex flex-col items-center">
-              <div id="reader" className="w-full"></div>
-              <p className="text-sm text-muted-foreground mt-4 text-center">
-                Point your camera at the booking QR code
-              </p>
+          {/* Scanner View */}
+          <div className={`${result || verifying ? "hidden" : "block"}`}>
+            <div 
+                id="reader" 
+                className="w-full overflow-hidden rounded-lg bg-black/5 min-h-[300px] mb-4"
+            ></div>
+
+            {!permissionGranted && cameras.length === 0 && (
+                 <div className="text-center py-8">
+                    <Camera className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Requesting camera access...</p>
+                 </div>
+            )}
+
+            <div className="space-y-4">
+              {cameras.length > 0 && (
+                <Select
+                  value={selectedCamera}
+                  onValueChange={(val) => {
+                      setSelectedCamera(val);
+                      // If scanning, restart with new camera
+                      if (scanning) {
+                          stopScanning().then(() => {
+                              // Small delay to ensure stop completes
+                              setTimeout(() => {
+                                  // Update selected camera state first
+                                  // Then start
+                                  // Actually state update is async, so we rely on useEffect or just call start with new val
+                                  // But startScanning uses selectedCamera state.
+                                  // We can pass val directly to a modified start function or just wait.
+                                  // Let's just stop. User has to click start again? 
+                                  // Or auto restart.
+                              }, 100);
+                          });
+                      }
+                  }}
+                  disabled={scanning}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Camera" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cameras.map((camera) => (
+                      <SelectItem key={camera.id} value={camera.id}>
+                        {camera.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {!scanning ? (
+                <Button 
+                    className="w-full" 
+                    size="lg" 
+                    onClick={startScanning}
+                    disabled={cameras.length === 0}
+                >
+                  <Camera className="mr-2 h-4 w-4" />
+                  Start Scanning
+                </Button>
+              ) : (
+                <Button 
+                    variant="destructive" 
+                    className="w-full" 
+                    size="lg" 
+                    onClick={stopScanning}
+                >
+                  Stop Scanning
+                </Button>
+              )}
             </div>
-          ) : verifying ? (
+          </div>
+
+          {/* Verifying State */}
+          {verifying && (
             <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
               <p className="text-lg font-medium">Verifying Booking...</p>
             </div>
-          ) : result ? (
+          )}
+
+          {/* Result View */}
+          {result && (
             <div className="flex flex-col items-center text-center space-y-6">
               {result.valid ? (
                 result.paymentStatus === "Pending" ? (
-                   <div className="flex flex-col items-center text-yellow-500">
+                  <div className="flex flex-col items-center text-yellow-500">
                     <AlertTriangle className="h-16 w-16 mb-2" />
                     <h2 className="text-2xl font-bold">Payment Pending</h2>
                     <p className="text-muted-foreground">{result.message}</p>
@@ -166,11 +336,15 @@ export default function ScannerPage() {
                 <div className="w-full bg-muted p-4 rounded-lg text-left space-y-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Guest:</span>
-                    <span className="font-medium">{result.booking.user?.name || "Unknown"}</span>
+                    <span className="font-medium">
+                      {result.booking.user?.name || "Unknown"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Phone:</span>
-                    <span className="font-medium">{result.booking.user?.phone || "N/A"}</span>
+                    <span className="font-medium">
+                      {result.booking.user?.phone || "N/A"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Date:</span>
@@ -179,20 +353,33 @@ export default function ScannerPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Time:</span>
                     <span className="font-medium">
-                        {new Date(result.booking.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - 
-                        {new Date(result.booking.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      {new Date(result.booking.startTime).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}{" "}
+                      -{" "}
+                      {new Date(result.booking.endTime).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Amount:</span>
                     <span className="font-medium">₹{result.booking.price}</span>
                   </div>
-                   {result.paymentStatus && (
+                  {result.paymentStatus && (
                     <div className="flex justify-between border-t pt-2 mt-2">
-                        <span className="text-muted-foreground">Payment:</span>
-                        <span className={`font-bold ${result.paymentStatus === 'Paid' ? 'text-green-600' : 'text-yellow-600'}`}>
-                            {result.paymentStatus}
-                        </span>
+                      <span className="text-muted-foreground">Payment:</span>
+                      <span
+                        className={`font-bold ${
+                          result.paymentStatus === "Paid"
+                            ? "text-green-600"
+                            : "text-yellow-600"
+                        }`}
+                      >
+                        {result.paymentStatus}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -203,7 +390,7 @@ export default function ScannerPage() {
                 Scan Another
               </Button>
             </div>
-          ) : null}
+          )}
         </CardContent>
       </Card>
     </div>
