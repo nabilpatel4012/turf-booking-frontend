@@ -227,7 +227,7 @@ export default function SettingsPage() {
   const fetchTurfs = async () => {
     setLoading("turfs", true);
     try {
-      const res = await fetchWithAuth(getApiUrl("admin/my-turfs"));
+      const res = await fetchWithAuth(getApiUrl("/turfs/admin/my-turfs"));
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch turfs");
       setTurfs(data.data);
@@ -241,8 +241,6 @@ export default function SettingsPage() {
     }
   };
 
-  // --- [UPDATED] ---
-  // This fetch remains the same, using the GET /settings/turf endpoint
   const fetchTurfSettings = async (turfId: string) => {
     setLoading("turfSettings", true);
     try {
@@ -308,19 +306,15 @@ export default function SettingsPage() {
   };
 
   // --- API ACTIONS ---
-
-  // --- [NEW] ---
-  // Helper function to update the nested turfSettingsForm state
   const handleTurfFormChange = (
     category: keyof TurfSettings,
     key: string,
     value: any
   ) => {
-    // Attempt to parse numbers from input fields
     const originalValue = (turfSettingsForm as any)[category][key];
     if (typeof originalValue === "number") {
       value = parseInt(value, 10);
-      if (isNaN(value)) value = 0; // Default to 0 if parse fails
+      if (isNaN(value)) value = 0;
     }
 
     setTurfSettingsForm((prev: TurfSettings | null) => {
@@ -335,14 +329,11 @@ export default function SettingsPage() {
     });
   };
 
-  // --- [NEW/RESTORED] ---
-  // Autosave function for specific toggles (Booking & Maintenance)
   const handleTurfAutosave = async (
     endpoint: string,
     payload: object,
     optimisticUpdate: () => void
   ) => {
-    // 1. Optimistically update the local form state
     optimisticUpdate();
 
     const toastId = toast.loading("Updating...");
@@ -354,18 +345,13 @@ export default function SettingsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Update failed");
       toast.success(data.message || "Setting updated", { id: toastId });
-      // 2. Refetch the *whole* settings object to ensure perfect sync
       await fetchTurfSettings(selectedTurfId);
     } catch (error: any) {
       toast.error("Update failed", { id: toastId, description: error.message });
-      // 3. On failure, refetch to revert the optimistic update
       await fetchTurfSettings(selectedTurfId);
     }
   };
 
-  // --- [UPDATED] ---
-  // This function now uses the `/settings/turf/update` endpoint
-  // It saves ALL settings (including those just autosaved, which is fine)
   const handleSaveTurfSettings = async () => {
     if (!turfSettingsForm || !selectedTurfId) return;
 
@@ -376,7 +362,7 @@ export default function SettingsPage() {
         method: "PUT",
         body: JSON.stringify({
           turfId: selectedTurfId,
-          settings: turfSettingsForm, // Send the whole form object
+          settings: turfSettingsForm,
         }),
       });
       const data = await res.json();
@@ -384,7 +370,6 @@ export default function SettingsPage() {
       toast.success("Settings saved successfully!", {
         id: toastId,
       });
-      // Refetch the settings to ensure sync
       await fetchTurfSettings(selectedTurfId);
     } catch (error: any) {
       toast.error("Save failed", { id: toastId, description: error.message });
@@ -585,11 +570,11 @@ export default function SettingsPage() {
   return (
     <>
       <Toaster richColors position="top-right" />
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your account, security, and turf settings.
+            Manage your turf, notifications, and security.
           </p>
         </div>
 
@@ -598,36 +583,29 @@ export default function SettingsPage() {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
             <TabsTrigger value="turf">
               <Settings className="h-4 w-4 mr-2" />
-              Turf
-            </TabsTrigger>
-            <TabsTrigger value="account">
-              <User className="h-4 w-4 mr-2" />
-              Account
-            </TabsTrigger>
-            <TabsTrigger value="security">
-              <Shield className="h-4 w-4 mr-2" />
-              Security
-            </TabsTrigger>
-            <TabsTrigger value="sessions">
-              <Monitor className="h-4 w-4 mr-2" />
-              Sessions
+              Turf Configuration
             </TabsTrigger>
             <TabsTrigger value="notifications">
               <Bell className="h-4 w-4 mr-2" />
               Notifications
             </TabsTrigger>
+            <TabsTrigger value="security">
+              <Shield className="h-4 w-4 mr-2" />
+              Profile & Security
+            </TabsTrigger>
           </TabsList>
 
-          {/* Turf Settings Tab */}
+          {/* === TAB 1: TURF CONFIGURATION === */}
           <TabsContent value="turf" className="space-y-6">
+            {/* Turf Selection - Always visible */}
             <Card>
-              <CardHeader>
-                <CardTitle>Select Turf</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Select Context</CardTitle>
                 <CardDescription>
-                  Choose a turf to manage its settings.
+                  Choose which turf's settings you are editing.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -636,133 +614,101 @@ export default function SettingsPage() {
                   onValueChange={setSelectedTurfId}
                   disabled={isLoading.turfs}
                 >
-                  <SelectTrigger className="w-full max-w-md">
+                  <SelectTrigger className="w-full sm:w-[320px]">
                     <SelectValue placeholder="Select a turf..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {isLoading.turfs ? (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
-                        Loading turfs...
-                      </div>
-                    ) : (
-                      turfs.map((turf) => (
-                        <SelectItem key={turf.id} value={turf.id}>
-                          {turf.name}
-                        </SelectItem>
-                      ))
-                    )}
+                    {turfs.map((turf) => (
+                      <SelectItem key={turf.id} value={turf.id}>
+                        {turf.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </CardContent>
             </Card>
 
             {isLoading.turfSettings && !turfSettingsForm ? (
-              <div className="flex items-center justify-center p-8 text-muted-foreground">
+              <div className="flex items-center justify-center p-12 text-muted-foreground">
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                Loading turf settings...
+                Loading configuration...
               </div>
             ) : turfSettingsForm && selectedTurfId ? (
-              <>
-                <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-                  {/* --- [AUTOSAVE] Booking Status Card --- */}
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Column 1: Core Operations */}
+                <div className="space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Booking Status</CardTitle>
+                      <CardTitle>Core Operations</CardTitle>
                       <CardDescription>
-                        Enable or disable new bookings (autosaved).
+                        Control availability and basic parameters.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="booking-enabled"
-                          checked={turfSettingsForm.booking.enabled}
-                          onCheckedChange={(enabled) =>
-                            handleTurfAutosave(
-                              "/settings/turf/toggle-booking",
-                              { enabled },
-                              () =>
-                                handleTurfFormChange(
-                                  "booking",
-                                  "enabled",
-                                  enabled
-                                )
-                            )
-                          }
-                        />
-                        <Label htmlFor="booking-enabled">
-                          {turfSettingsForm.booking.enabled
-                            ? "Bookings Enabled"
-                            : "Bookings Disabled"}
-                        </Label>
-                      </div>
-                      {!turfSettingsForm.booking.enabled && (
-                        <div className="space-y-2">
-                          <Label htmlFor="booking-disabled-reason">
-                            Reason for Disabling (Optional, autosaved on blur)
+                    <CardContent className="space-y-6">
+                      {/* Booking Status Toggle */}
+                      <div className="flex flex-col space-y-4 rounded-lg border p-4">
+                        <div className="flex items-center justify-between">
+                          <Label
+                            htmlFor="booking-enabled"
+                            className="font-medium"
+                          >
+                            Accepting Bookings
                           </Label>
-                          <Textarea
-                            id="booking-disabled-reason"
-                            placeholder="e.g., Closed for a private event."
-                            value={
-                              turfSettingsForm.booking.disabledReason || ""
-                            }
-                            onChange={(e) =>
-                              handleTurfFormChange(
-                                "booking",
-                                "disabledReason",
-                                e.target.value
-                              )
-                            }
-                            onBlur={(e) =>
+                          <Switch
+                            id="booking-enabled"
+                            checked={turfSettingsForm.booking.enabled}
+                            onCheckedChange={(enabled) =>
                               handleTurfAutosave(
                                 "/settings/turf/toggle-booking",
-                                {
-                                  enabled: false,
-                                  reason: e.target.value,
-                                },
+                                { enabled },
                                 () =>
                                   handleTurfFormChange(
                                     "booking",
-                                    "disabledReason",
-                                    e.target.value
+                                    "enabled",
+                                    enabled
                                   )
                               )
                             }
                           />
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* --- [AUTOSAVE] General Settings Card --- */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>General Settings</CardTitle>
-                      <CardDescription>
-                        Maintenance mode is autosaved. Timezone requires "Save".
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="timezone">Timezone</Label>
-                        <Input
-                          id="timezone"
-                          value={turfSettingsForm.general.timezone}
-                          onChange={(e) =>
-                            handleTurfFormChange(
-                              "general",
-                              "timezone",
-                              e.target.value
-                            )
-                          }
-                        />
+                        {!turfSettingsForm.booking.enabled && (
+                          <div className="animate-in fade-in slide-in-from-top-2">
+                            <Input
+                              placeholder="Reason for closure (optional)"
+                              value={
+                                turfSettingsForm.booking.disabledReason || ""
+                              }
+                              onChange={(e) =>
+                                handleTurfFormChange(
+                                  "booking",
+                                  "disabledReason",
+                                  e.target.value
+                                )
+                              }
+                              onBlur={(e) =>
+                                handleTurfAutosave(
+                                  "/settings/turf/toggle-booking",
+                                  {
+                                    enabled: false,
+                                    reason: e.target.value,
+                                  },
+                                  () => {}
+                                )
+                              }
+                            />
+                          </div>
+                        )}
                       </div>
 
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2">
+                      {/* Maintenance Toggle */}
+                      <div className="flex flex-col space-y-4 rounded-lg border p-4">
+                        <div className="flex items-center justify-between">
+                          <Label
+                            htmlFor="maintenance-mode"
+                            className="font-medium"
+                          >
+                            Maintenance Mode
+                          </Label>
                           <Switch
                             id="maintenance-mode"
                             checked={turfSettingsForm.general.maintenanceMode}
@@ -779,20 +725,12 @@ export default function SettingsPage() {
                               )
                             }
                           />
-                          <Label htmlFor="maintenance-mode">
-                            {turfSettingsForm.general.maintenanceMode
-                              ? "Maintenance Enabled"
-                              : "Maintenance Disabled"}
-                          </Label>
                         </div>
                         {turfSettingsForm.general.maintenanceMode && (
-                          <div className="space-y-2">
-                            <Label htmlFor="maintenance-message">
-                              Message (Optional, autosaved on blur)
-                            </Label>
+                          <div className="animate-in fade-in slide-in-from-top-2">
                             <Textarea
-                              id="maintenance-message"
-                              placeholder="e.g., Undergoing turf repairs until 5 PM."
+                              className="resize-none"
+                              placeholder="Maintenance message (optional)"
                               value={
                                 turfSettingsForm.general.maintenanceMessage ||
                                 ""
@@ -807,52 +745,65 @@ export default function SettingsPage() {
                               onBlur={(e) =>
                                 handleTurfAutosave(
                                   "/settings/turf/toggle-maintenance",
-                                  { enabled: true, message: e.target.value },
-                                  () =>
-                                    handleTurfFormChange(
-                                      "general",
-                                      "maintenanceMessage",
-                                      e.target.value
-                                    )
+                                  {
+                                    enabled: true,
+                                    message: e.target.value,
+                                  },
+                                  () => {}
                                 )
                               }
                             />
                           </div>
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
 
-                  {/* --- [MANUAL SAVE] Booking Rules Card --- */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Booking Rules</CardTitle>
-                      <CardDescription>
-                        Define rules for how users can book.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="auto-confirm">
-                          Auto-confirm Bookings
-                        </Label>
-                        <Switch
-                          id="auto-confirm"
-                          checked={turfSettingsForm.booking.autoConfirm}
-                          onCheckedChange={(checked) =>
+                      <div className="space-y-2">
+                        <Label htmlFor="timezone">Timezone</Label>
+                        <Input
+                          id="timezone"
+                          value={turfSettingsForm.general.timezone}
+                          onChange={(e) =>
                             handleTurfFormChange(
-                              "booking",
-                              "autoConfirm",
-                              checked
+                              "general",
+                              "timezone",
+                              e.target.value
                             )
                           }
                         />
                       </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Column 2: Rules & Payments */}
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Rules & Payment</CardTitle>
+                      <CardDescription>
+                        Define how bookings and payments are handled.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {/* Auto Confirm */}
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="auto-confirm">Auto-confirm Bookings</Label>
+                            <Switch
+                                id="auto-confirm"
+                                checked={turfSettingsForm.booking.autoConfirm}
+                                onCheckedChange={(c) =>
+                                    handleTurfFormChange("booking", "autoConfirm", c)
+                                }
+                            />
+                        </div>
+
+                      {/* Numeric Inputs Grid */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="min-hours">Min Hours</Label>
+                          <Label className="text-xs text-muted-foreground">
+                            Min Hours
+                          </Label>
                           <Input
-                            id="min-hours"
                             type="number"
                             value={turfSettingsForm.booking.minHours}
                             onChange={(e) =>
@@ -865,9 +816,10 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="max-hours">Max Hours</Label>
+                          <Label className="text-xs text-muted-foreground">
+                            Max Hours
+                          </Label>
                           <Input
-                            id="max-hours"
                             type="number"
                             value={turfSettingsForm.booking.maxHours}
                             onChange={(e) =>
@@ -879,723 +831,358 @@ export default function SettingsPage() {
                             }
                           />
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="advance-days">
-                          Booking Advance (Days)
-                        </Label>
-                        <Input
-                          id="advance-days"
-                          type="number"
-                          value={turfSettingsForm.booking.advanceDays}
-                          onChange={(e) =>
-                            handleTurfFormChange(
-                              "booking",
-                              "advanceDays",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cancellation-deadline">
-                          Cancellation Deadline (Hours before)
-                        </Label>
-                        <Input
-                          id="cancellation-deadline"
-                          type="number"
-                          value={turfSettingsForm.booking.cancellationDeadline}
-                          onChange={(e) =>
-                            handleTurfFormChange(
-                              "booking",
-                              "cancellationDeadline",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="buffer-time">Buffer Time (Mins)</Label>
-                        <Input
-                          id="buffer-time"
-                          type="number"
-                          value={turfSettingsForm.booking.bufferTime}
-                          onChange={(e) =>
-                            handleTurfFormChange(
-                              "booking",
-                              "bufferTime",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* --- [MANUAL SAVE] Payment Settings Card --- */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Payment Settings</CardTitle>
-                      <CardDescription>
-                        Configure advance payments and refunds.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="require-advance">
-                          Require Advance Payment
-                        </Label>
-                        <Switch
-                          id="require-advance"
-                          checked={turfSettingsForm.payment.requireAdvance}
-                          onCheckedChange={(checked) =>
-                            handleTurfFormChange(
-                              "payment",
-                              "requireAdvance",
-                              checked
-                            )
-                          }
-                        />
-                      </div>
-                      {turfSettingsForm.payment.requireAdvance && (
                         <div className="space-y-2">
-                          <Label htmlFor="advance-percentage">
-                            Advance Percentage (%)
+                          <Label className="text-xs text-muted-foreground">
+                            Advance (Days)
                           </Label>
                           <Input
-                            id="advance-percentage"
                             type="number"
-                            min={0}
-                            max={100}
-                            value={turfSettingsForm.payment.advancePercentage}
+                            value={turfSettingsForm.booking.advanceDays}
                             onChange={(e) =>
                               handleTurfFormChange(
-                                "payment",
-                                "advancePercentage",
+                                "booking",
+                                "advanceDays",
                                 e.target.value
                               )
                             }
                           />
                         </div>
-                      )}
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">
+                            Cancel Deadline (Hrs)
+                          </Label>
+                          <Input
+                            type="number"
+                            value={turfSettingsForm.booking.cancellationDeadline}
+                            onChange={(e) =>
+                              handleTurfFormChange(
+                                "booking",
+                                "cancellationDeadline",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+
                       <Separator />
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="refund-enabled">Enable Refunds</Label>
-                        <Switch
-                          id="refund-enabled"
-                          checked={turfSettingsForm.payment.refundEnabled}
-                          onCheckedChange={(checked) =>
-                            handleTurfFormChange(
-                              "payment",
-                              "refundEnabled",
-                              checked
-                            )
-                          }
-                        />
+
+                      {/* Payment */}
+                      <div className="space-y-4">
+                         <div className="flex items-center justify-between">
+                            <Label htmlFor="req-adv">Require Advance</Label>
+                            <Switch
+                                id="req-adv"
+                                checked={turfSettingsForm.payment.requireAdvance}
+                                onCheckedChange={(c) => handleTurfFormChange("payment", "requireAdvance", c)}
+                            />
+                         </div>
+                         {turfSettingsForm.payment.requireAdvance && (
+                             <div className="flex items-center gap-2">
+                                 <Input 
+                                    type="number" 
+                                    className="w-20"
+                                    value={turfSettingsForm.payment.advancePercentage}
+                                    onChange={(e) => handleTurfFormChange("payment", "advancePercentage", e.target.value)}
+                                />
+                                <span className="text-sm">% of total</span>
+                             </div>
+                         )}
                       </div>
-                      {turfSettingsForm.payment.refundEnabled && (
-                        <div className="space-y-2">
-                          <Label htmlFor="refund-percentage">
-                            Refund Percentage (%)
-                          </Label>
-                          <Input
-                            id="refund-percentage"
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={turfSettingsForm.payment.refundPercentage}
-                            onChange={(e) =>
-                              handleTurfFormChange(
-                                "payment",
-                                "refundPercentage",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
 
-                  {/* --- [MANUAL SAVE] Turf Notifications Card --- */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Turf Notifications</CardTitle>
-                      <CardDescription>
-                        Choose what to be notified about for this turf.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="notif-new-booking">
-                          On New Booking
-                        </Label>
-                        <Switch
-                          id="notif-new-booking"
-                          checked={turfSettingsForm.notifications.onNewBooking}
-                          onCheckedChange={(checked) =>
-                            handleTurfFormChange(
-                              "notifications",
-                              "onNewBooking",
-                              checked
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="notif-cancellation">
-                          On Cancellation
-                        </Label>
-                        <Switch
-                          id="notif-cancellation"
-                          checked={
-                            turfSettingsForm.notifications.onCancellation
-                          }
-                          onCheckedChange={(checked) =>
-                            handleTurfFormChange(
-                              "notifications",
-                              "onCancellation",
-                              checked
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="notif-payment">On Payment</Label>
-                        <Switch
-                          id="notif-payment"
-                          checked={turfSettingsForm.notifications.onPayment}
-                          onCheckedChange={(checked) =>
-                            handleTurfFormChange(
-                              "notifications",
-                              "onPayment",
-                              checked
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="reminder-before">
-                          Reminder (Hours Before)
-                        </Label>
-                        <Input
-                          id="reminder-before"
-                          type="number"
-                          value={turfSettingsForm.notifications.reminderBefore}
-                          onChange={(e) =>
-                            handleTurfFormChange(
-                              "notifications",
-                              "reminderBefore",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* --- [MANUAL SAVE] Save Button --- */}
-                <div className="flex justify-end mt-6">
-                  <Button
-                    onClick={handleSaveTurfSettings}
-                    disabled={isLoading.turfSettings}
-                  >
-                    {isLoading.turfSettings ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="mr-2 h-4 w-4" />
-                    )}
-                    Save Turf Settings
+                    <Button 
+                        onClick={handleSaveTurfSettings} 
+                        disabled={isLoading.turfSettings}
+                        className="w-full"
+                    >
+                        {isLoading.turfSettings ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Sparkles className="mr-2 h-4 w-4" />
+                        )}
+                        Save Configuration
                   </Button>
                 </div>
-              </>
+              </div>
             ) : (
               !isLoading.turfs && (
-                <Alert>
+                <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>No Turf Selected</AlertTitle>
+                  <AlertTitle>No Turf Found</AlertTitle>
                   <AlertDescription>
-                    Please select a turf to view and manage its settings.
+                    Please ensure you have at least one turf created.
                   </AlertDescription>
                 </Alert>
               )
             )}
           </TabsContent>
 
-          {/* Account Tab */}
-          <TabsContent value="account" className="space-y-6 max-w-2xl">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>
-                  Update your account profile information
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" placeholder="Enter your name" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" placeholder="your@email.com" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" type="tel" placeholder="+91 XXXXX XXXXX" />
-                </div>
-                <Button>Save Changes</Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Business Information</CardTitle>
-                <CardDescription>Manage your business details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="business-name">Business Name</Label>
-                  <Input id="business-name" placeholder="Your Business Name" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gst">GST Number (Optional)</Label>
-                  <Input id="gst" placeholder="Enter GST number" />
-                </div>
-                <Button>Update Business Info</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Security Tab */}
-          <TabsContent value="security" className="space-y-6 max-w-2xl">
-            <Card>
-              <CardHeader>
-                <CardTitle>Change Password</CardTitle>
-                <CardDescription>
-                  Ensure your account is using a strong password.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="current-password">Current Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="current-password"
-                      type={showPassword.current ? "text" : "password"}
-                      value={passwordForm.currentPassword}
-                      onChange={(e) =>
-                        setPasswordForm({
-                          ...passwordForm,
-                          currentPassword: e.target.value,
-                        })
-                      }
-                      placeholder="Enter current password"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() =>
-                        setShowPassword({
-                          ...showPassword,
-                          current: !showPassword.current,
-                        })
-                      }
-                    >
-                      {showPassword.current ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">New Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="new-password"
-                      type={showPassword.new ? "text" : "password"}
-                      value={passwordForm.newPassword}
-                      onChange={(e) =>
-                        setPasswordForm({
-                          ...passwordForm,
-                          newPassword: e.target.value,
-                        })
-                      }
-                      placeholder="Enter new password (min 8 characters)"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() =>
-                        setShowPassword({
-                          ...showPassword,
-                          new: !showPassword.new,
-                        })
-                      }
-                    >
-                      {showPassword.new ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm New Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirm-password"
-                      type={showPassword.confirm ? "text" : "password"}
-                      value={passwordForm.confirmPassword}
-                      onChange={(e) =>
-                        setPasswordForm({
-                          ...passwordForm,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      placeholder="Confirm new password"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() =>
-                        setShowPassword({
-                          ...showPassword,
-                          confirm: !showPassword.confirm,
-                        })
-                      }
-                    >
-                      {showPassword.confirm ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handlePasswordChange}
-                  disabled={isPasswordChanging}
-                >
-                  {isPasswordChanging && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  <Lock className="mr-2 h-4 w-4" />
-                  Change Password
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Two-Factor Authentication (2FA)</CardTitle>
-                <CardDescription>
-                  Add an extra layer of security to your account.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading.ownerSettings ? (
-                  <p className="text-sm text-muted-foreground">
-                    Loading 2FA status...
-                  </p>
-                ) : ownerSettings?.security.twoFactorEnabled ? (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-green-600">
-                        2FA is Enabled
-                      </p>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        Method: {ownerSettings.security.twoFactorMethod}
-                      </p>
-                    </div>
-                    <Button variant="destructive" onClick={handle2FADisable}>
-                      Disable 2FA
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">2FA is Disabled</p>
-                      <p className="text-sm text-muted-foreground">
-                        Greatly improve your account security.
-                      </p>
-                    </div>
-                    <Dialog
-                      open={is2FAModalOpen}
-                      onOpenChange={setIs2FAModalOpen}
-                    >
-                      <DialogTrigger asChild>
-                        <Button>
-                          <KeyRound className="mr-2 h-4 w-4" /> Enable 2FA
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Enable Two-Factor Auth</DialogTitle>
-                          <DialogDescription>
-                            Select a method for authentication codes.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <Select
-                            value={selected2FAMethod}
-                            onValueChange={(v: any) => setSelected2FAMethod(v)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a method" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="email">
-                                <div className="flex items-center gap-2">
-                                  <Mail className="h-4 w-4" /> Email
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="sms">
-                                <div className="flex items-center gap-2">
-                                  <MessageSquare className="h-4 w-4" /> SMS
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="authenticator">
-                                <div className="flex items-center gap-2">
-                                  <Smartphone className="h-4 w-4" />{" "}
-                                  Authenticator App
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <DialogFooter>
-                          <Button onClick={handle2FAEnable}>Enable</Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Sessions Tab */}
-          <TabsContent value="sessions" className="space-y-6 max-w-3xl">
-            <Alert>
-              <CheckCircle2 className="h-4 w-4" />
-              <AlertDescription>
-                You have {sessions.length} active{" "}
-                {sessions.length === 1 ? "session" : "sessions"}. Sign out from
-                other devices to improve security.
-              </AlertDescription>
-            </Alert>
-
-            {currentSession && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    {getDeviceIcon(currentSession.deviceType)}
-                    Current Device
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">
-                          {currentSession.deviceName}
-                        </p>
-                        <Badge variant="default">Current</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {currentSession.ipAddress} • Last used{" "}
-                        {formatDistanceToNow(
-                          new Date(currentSession.lastUsedAt),
-                          { addSuffix: true }
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {otherSessions.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">Other Devices</h2>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={revokeAllOthers}
-                    disabled={isLoading.action !== null}
-                  >
-                    {isLoading.action === "others" ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <LogOut className="mr-2 h-4 w-4" />
-                    )}
-                    Sign Out All Others
-                  </Button>
-                </div>
-
-                {otherSessions.map((session) => (
-                  <Card key={session.id}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          {getDeviceIcon(session.deviceType)}
-                          <div className="space-y-1">
-                            <p className="font-medium">{session.deviceName}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {session.ipAddress} • Last used{" "}
-                              {formatDistanceToNow(
-                                new Date(session.lastUsedAt),
-                                { addSuffix: true }
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => revokeSession(session.id)}
-                          disabled={isLoading.action === session.id}
-                        >
-                          {isLoading.action === session.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            <Card className="border-destructive">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                  <AlertTriangle className="h-5 w-5" />
-                  Danger Zone
-                </CardTitle>
-                <CardDescription>
-                  This will sign you out from all devices, including this one.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  variant="destructive"
-                  onClick={revokeAll}
-                  disabled={isLoading.action !== null}
-                >
-                  {isLoading.action === "all" ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <LogOut className="mr-2 h-4 w-4" />
-                  )}
-                  Sign Out Everywhere
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-6 max-w-2xl">
-            {isLoading.ownerSettings || !notificationPrefs ? (
-              <div className="flex items-center justify-center p-8 text-muted-foreground">
+          {/* === TAB 2: NOTIFICATIONS === */}
+          <TabsContent value="notifications" className="space-y-6">
+            {isLoading.ownerSettings || !notificationPrefs || !turfSettingsForm ? (
+                <div className="flex items-center justify-center p-12 text-muted-foreground">
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                Loading notification settings...
+                Loading notification preferences...
               </div>
             ) : (
-              <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notification Channels</CardTitle>
-                    <CardDescription>
-                      Choose where you receive notifications.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {Object.entries(notificationPrefs.channels).map(
-                      ([key, value]) => (
-                        <div
-                          key={key}
-                          className="flex items-center justify-between"
-                        >
-                          <Label
-                            htmlFor={`channel-${key}`}
-                            className="capitalize"
-                          >
-                            {key} Notifications
-                          </Label>
-                          <Switch
-                            id={`channel-${key}`}
-                            checked={value}
-                            onCheckedChange={(checked) =>
-                              setNotificationPrefs((prev: any) => ({
-                                ...prev,
-                                channels: { ...prev.channels, [key]: checked },
-                              }))
-                            }
-                          />
-                        </div>
-                      )
-                    )}
-                  </CardContent>
-                </Card>
+                <div className="grid gap-6 md:grid-cols-2">
+                    {/* Admin Channels */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Admin Channels</CardTitle>
+                            <CardDescription>Where you receive alerts.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <MessageSquare className="h-4 w-4 text-green-600" />
+                                    <Label htmlFor="ch-whatsapp">WhatsApp</Label>
+                                </div>
+                                <Switch 
+                                    id="ch-whatsapp"
+                                    checked={notificationPrefs.channels.whatsapp}
+                                    onCheckedChange={(c) => setNotificationPrefs(prev => prev ? ({...prev, channels: {...prev.channels, whatsapp: c}}) : null)}
+                                />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Mail className="h-4 w-4 text-blue-600" />
+                                    <Label htmlFor="ch-email">Email</Label>
+                                </div>
+                                <Switch 
+                                    id="ch-email"
+                                    checked={notificationPrefs.channels.email}
+                                    onCheckedChange={(c) => setNotificationPrefs(prev => prev ? ({...prev, channels: {...prev.channels, email: c}}) : null)}
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notification Types</CardTitle>
-                    <CardDescription>
-                      Choose what you get notified about.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {Object.entries(notificationPrefs.types).map(
-                      ([key, value]) => (
-                        <div
-                          key={key}
-                          className="flex items-center justify-between"
-                        >
-                          <Label htmlFor={`type-${key}`} className="capitalize">
-                            {key.replace(/([A-Z])/g, " $1")}
-                          </Label>
-                          <Switch
-                            id={`type-${key}`}
-                            checked={value}
-                            onCheckedChange={(checked) =>
-                              setNotificationPrefs((prev: any) => ({
-                                ...prev,
-                                types: { ...prev.types, [key]: checked },
-                              }))
-                            }
-                          />
-                        </div>
-                      )
-                    )}
-                  </CardContent>
-                </Card>
-                <div className="flex justify-end">
-                  <Button onClick={handleUpdateNotifications}>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Save Preferences
-                  </Button>
+                     {/* Admin Events */}
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Admin Events</CardTitle>
+                            <CardDescription>What triggers an alert for you.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {Object.entries(notificationPrefs.types).map(([key, value]) => (
+                                <div key={key} className="flex items-center justify-between">
+                                    <Label htmlFor={`type-${key}`} className="capitalize text-sm">
+                                        {key.replace(/([A-Z])/g, " $1")}
+                                    </Label>
+                                    <Switch 
+                                        id={`type-${key}`}
+                                        checked={value}
+                                        onCheckedChange={(c) => setNotificationPrefs((prev: any) => ({
+                                            ...prev,
+                                            types: { ...prev.types, [key]: c }
+                                        }))}
+                                    />
+                                </div>
+                            ))}
+                        </CardContent>
+                     </Card>
+
+                    {/* Customer Alerts (Turf Level) */}
+                    <Card className="md:col-span-2 border-primary/20 bg-primary/5">
+                        <CardHeader>
+                            <CardTitle>Customer Alerts (Turf: {turfs.find(t => t.id === selectedTurfId)?.name})</CardTitle>
+                            <CardDescription>
+                                These settings are specific to the selected turf.
+                            </CardDescription>
+                        </CardHeader>
+                         <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="cust-new-booking">Notify Customer on Booking</Label>
+                                <Switch 
+                                    id="cust-new-booking"
+                                    checked={turfSettingsForm.notifications.onNewBooking}
+                                    onCheckedChange={(c) => handleTurfFormChange("notifications", "onNewBooking", c)}
+                                />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="cust-cancellation">Notify Customer on Cancellation</Label>
+                                <Switch 
+                                    id="cust-cancellation"
+                                    checked={turfSettingsForm.notifications.onCancellation}
+                                    onCheckedChange={(c) => handleTurfFormChange("notifications", "onCancellation", c)}
+                                />
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                                <Label htmlFor="cust-reminder" className="whitespace-nowrap">Reminder Hours Before</Label>
+                                <Input 
+                                    id="cust-reminder"
+                                    type="number"
+                                    className="w-24"
+                                    value={turfSettingsForm.notifications.reminderBefore}
+                                    onChange={(e) => handleTurfFormChange("notifications", "reminderBefore", e.target.value)}
+                                />
+                            </div>
+                         </CardContent>
+                         {/* We need a save button specifically for these merged settings */}
+                    </Card>
+
+                    <div className="md:col-span-2 flex justify-end gap-2">
+                        <Button onClick={() => {
+                            handleUpdateNotifications(); // Save admin prefs
+                            handleSaveTurfSettings(); // Save turf prefs
+                        }}>
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            Save All Notification Preferences
+                        </Button>
+                    </div>
                 </div>
-              </>
             )}
+          </TabsContent>
+
+          {/* === TAB 3: PROFILE & SECURITY === */}
+          <TabsContent value="security" className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Profile</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Name</Label>
+                                    <Input placeholder="Your Name" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Email</Label>
+                                    <Input placeholder="Email" />
+                                </div>
+                                <Button variant="outline" size="sm">Update Profile</Button>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Security</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <Dialog open={is2FAModalOpen} onOpenChange={setIs2FAModalOpen}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-1">
+                                             <Label>Two-Factor Auth</Label>
+                                             <p className="text-xs text-muted-foreground">
+                                                {ownerSettings?.security.twoFactorEnabled 
+                                                    ? `Enabled via ${ownerSettings.security.twoFactorMethod}` 
+                                                    : "Currently disabled"}
+                                             </p>
+                                        </div>
+                                        {ownerSettings?.security.twoFactorEnabled ? (
+                                             <Button variant="destructive" size="sm" onClick={handle2FADisable}>Disable</Button>
+                                        ) : (
+                                            <DialogTrigger asChild>
+                                                <Button size="sm" variant="secondary">Enable</Button>
+                                            </DialogTrigger>
+                                        )}
+                                    </div>
+                                     <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Enable 2FA</DialogTitle>
+                                        </DialogHeader>
+                                        <Select value={selected2FAMethod} onValueChange={(v: any) => setSelected2FAMethod(v)}>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="email">Email</SelectItem>
+                                                <SelectItem value="sms">SMS</SelectItem>
+                                                <SelectItem value="authenticator">Authenticator</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <DialogFooter>
+                                            <Button onClick={handle2FAEnable}>Confirm</Button>
+                                        </DialogFooter>
+                                     </DialogContent>
+                                </Dialog>
+                                
+                                <Separator />
+                                
+                                <div className="space-y-4">
+                                    <Label>Change Password</Label>
+                                    <Input 
+                                        type="password" 
+                                        placeholder="Current Password" 
+                                        value={passwordForm.currentPassword}
+                                        onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                                    />
+                                    <Input 
+                                        type="password" 
+                                        placeholder="New Password (min 8 chars)" 
+                                        value={passwordForm.newPassword}
+                                        onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                                    />
+                                    <Input 
+                                        type="password" 
+                                        placeholder="Confirm New Password" 
+                                        value={passwordForm.confirmPassword}
+                                        onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                                    />
+                                    <Button onClick={handlePasswordChange} disabled={isPasswordChanging} size="sm">
+                                        {isPasswordChanging && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Update Password
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                
+                    <div className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Active Sessions</CardTitle>
+                                <CardDescription>{sessions.length} active sessions</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {currentSession && (
+                                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            {getDeviceIcon(currentSession.deviceType)}
+                                            <div>
+                                                <p className="text-sm font-medium">{currentSession.deviceName} (This)</p>
+                                                <p className="text-xs text-muted-foreground">{currentSession.ipAddress}</p>
+                                            </div>
+                                        </div>
+                                        <Badge variant="outline">Current</Badge>
+                                    </div>
+                                )}
+                                {otherSessions.map(s => (
+                                    <div key={s.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            {getDeviceIcon(s.deviceType)}
+                                            <div>
+                                                <p className="text-sm font-medium">{s.deviceName}</p>
+                                                <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(s.lastUsedAt), {addSuffix: true})}</p>
+                                            </div>
+                                        </div>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => revokeSession(s.id)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                {otherSessions.length > 0 && (
+                                    <Button variant="outline" size="sm" className="w-full text-destructive" onClick={revokeAllOthers}>
+                                        Sign Out All Others
+                                    </Button>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-destructive/20 bg-destructive/5">
+                             <CardHeader>
+                                <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                             </CardHeader>
+                             <CardContent>
+                                <Button variant="destructive" className="w-full" onClick={revokeAll}>
+                                    <LogOut className="mr-2 h-4 w-4" /> Sign Out Everywhere
+                                </Button>
+                             </CardContent>
+                        </Card>
+                    </div>
+                </div>
           </TabsContent>
         </Tabs>
       </div>
