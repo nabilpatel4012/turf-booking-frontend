@@ -937,7 +937,7 @@ export default function SettingsPage() {
                         <CardContent className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <MessageSquare className="h-4 w-4 text-green-600" />
+                                    <img src="/whatsapp-logo.svg" alt="WhatsApp" className="h-4 w-4 text-green-600" />
                                     <Label htmlFor="ch-whatsapp">WhatsApp</Label>
                                 </div>
                                 <Switch 
