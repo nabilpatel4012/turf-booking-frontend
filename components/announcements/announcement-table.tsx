@@ -80,7 +80,8 @@ export function AnnouncementTable({
 
   return (
     <>
-      <div className="rounded-md border border-border">
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-md border border-border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -98,7 +99,7 @@ export function AnnouncementTable({
               <TableRow>
                 <TableCell
                   colSpan={7}
-                  className="text-center text-muted-foreground"
+                  className="text-center text-muted-foreground h-24"
                 >
                   No announcements found
                 </TableCell>
@@ -123,15 +124,15 @@ export function AnnouncementTable({
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {announcement.turfId || "—"}
+                      {announcement.turfId || "All Turfs"}
                     </TableCell>
                     <TableCell>
                       <Badge
                         variant={isActuallyActive ? "default" : "secondary"}
                         className={
                           isActuallyActive
-                            ? "bg-green-500/10 text-green-500"
-                            : "bg-gray-500/10 text-gray-500"
+                            ? "bg-green-500/10 text-green-500 hover:bg-green-500/20"
+                            : "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20"
                         }
                       >
                         {isActuallyActive ? "Active" : "Inactive"}
@@ -147,21 +148,21 @@ export function AnnouncementTable({
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => setSelectedAnnouncement(announcement)}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => onEdit(announcement)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => onDelete(announcement)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -174,6 +175,93 @@ export function AnnouncementTable({
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {announcements.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground border rounded-lg bg-muted/5">
+            No announcements found
+          </div>
+        ) : (
+          announcements.map((announcement) => {
+            const isActuallyActive =
+              announcement.expiresAt === null
+                ? true
+                : isActive(announcement.expiresAt);
+            
+            return (
+              <div 
+                key={announcement.id} 
+                className="border border-border rounded-lg p-4 space-y-3 bg-card"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1">
+                    <h3 className="font-semibold line-clamp-1">{announcement.title}</h3>
+                    <Badge
+                      variant="secondary"
+                      className={`text-xs ${getTypeColor(announcement.type)}`}
+                    >
+                      {announcement.type}
+                    </Badge>
+                  </div>
+                  <Badge
+                    variant={isActuallyActive ? "default" : "secondary"}
+                    className={
+                      isActuallyActive
+                        ? "bg-green-500/10 text-green-500 hover:bg-green-500/20 whitespace-nowrap"
+                        : "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20 whitespace-nowrap"
+                    }
+                  >
+                    {isActuallyActive ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm pt-1">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Turf</p>
+                    <p className="font-medium truncate">{announcement.turfId || "All Turfs"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Expires</p>
+                    <p className="font-medium">
+                       {announcement.expiresAt
+                        ? formatDate(announcement.expiresAt)
+                        : "Never"}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="pt-2 flex gap-2">
+                   <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setSelectedAnnouncement(announcement)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" /> View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => onEdit(announcement)}
+                    >
+                      <Edit className="h-4 w-4 mr-2" /> Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onDelete(announcement)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       <Dialog

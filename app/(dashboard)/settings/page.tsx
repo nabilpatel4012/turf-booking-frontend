@@ -583,20 +583,22 @@ export default function SettingsPage() {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="turf">
-              <Settings className="h-4 w-4 mr-2" />
-              Turf Configuration
-            </TabsTrigger>
-            <TabsTrigger value="notifications">
-              <Bell className="h-4 w-4 mr-2" />
-              Notifications
-            </TabsTrigger>
-            <TabsTrigger value="security">
-              <Shield className="h-4 w-4 mr-2" />
-              Profile & Security
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+            <TabsList className="flex w-max lg:w-auto lg:inline-grid lg:grid-cols-3 h-auto p-1">
+              <TabsTrigger value="turf" className="px-4 py-2">
+                <Settings className="h-4 w-4 mr-2" />
+                Turf Configuration
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="px-4 py-2">
+                <Bell className="h-4 w-4 mr-2" />
+                Notifications
+              </TabsTrigger>
+              <TabsTrigger value="security" className="px-4 py-2">
+                <Shield className="h-4 w-4 mr-2" />
+                Profile & Security
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* === TAB 1: TURF CONFIGURATION === */}
           <TabsContent value="turf" className="space-y-6">

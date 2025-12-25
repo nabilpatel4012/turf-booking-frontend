@@ -295,9 +295,9 @@ export function PricingEditor({ turfId }: PricingEditorProps) {
 
       {/* Existing Rules List */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <CardTitle>Current Pricing Rules</CardTitle>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
             {saving ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -312,53 +312,100 @@ export function PricingEditor({ turfId }: PricingEditorProps) {
               No pricing rules configured.
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rules.map((rule, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">
-                        {rule.name || "-"}
-                      </TableCell>
-                      <TableCell>
-                        {rule.specificDate ? (
-                          <span className="text-blue-500 font-medium">
-                            {new Date(rule.specificDate).toLocaleDateString()}
-                          </span>
-                        ) : (
-                          <span className="capitalize">{rule.dayType}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {rule.startTime} - {rule.endTime}
-                      </TableCell>
-                      <TableCell>₹{rule.price}</TableCell>
-                      <TableCell>{rule.priority}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive/90"
+            <>
+              {/* Desktop View */}
+              <div className="hidden md:block rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Time</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rules.map((rule, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">
+                          {rule.name || "-"}
+                        </TableCell>
+                        <TableCell>
+                          {rule.specificDate ? (
+                            <span className="text-blue-500 font-medium">
+                              {new Date(rule.specificDate).toLocaleDateString()}
+                            </span>
+                          ) : (
+                            <span className="capitalize">{rule.dayType}</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {rule.startTime} - {rule.endTime}
+                        </TableCell>
+                        <TableCell>₹{rule.price}</TableCell>
+                        <TableCell>{rule.priority}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive/90"
+                            onClick={() => handleDeleteRule(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                 {rules.map((rule, index) => (
+                    <div key={index} className="border rounded-lg p-3 space-y-3 bg-card">
+                       <div className="flex justify-between items-start">
+                          <div>
+                              <p className="font-semibold text-sm">{rule.name || "Unnamed Rule"}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                                  Priority: {rule.priority}
+                                </span>
+                                {rule.specificDate ? (
+                                  <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-medium border border-blue-100">
+                                    {new Date(rule.specificDate).toLocaleDateString()}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs capitalize bg-slate-100 px-2 py-0.5 rounded text-slate-700">
+                                    {rule.dayType}
+                                  </span>
+                                )}
+                              </div>
+                          </div>
+                          <p className="font-bold text-lg">₹{rule.price}</p>
+                       </div>
+                       
+                       <div className="text-sm text-muted-foreground flex items-center gap-2 border-t pt-2">
+                          <span className="font-mono bg-muted/50 px-1.5 py-0.5 rounded text-xs">{rule.startTime}</span>
+                          <span>to</span>
+                          <span className="font-mono bg-muted/50 px-1.5 py-0.5 rounded text-xs">{rule.endTime}</span>
+                       </div>
+
+                       <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-destructive hover:text-destructive hover:bg-destructive/5 border-destructive/20"
                           onClick={() => handleDeleteRule(index)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Rule
                         </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                    </div>
+                 ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

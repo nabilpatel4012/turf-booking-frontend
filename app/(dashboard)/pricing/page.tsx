@@ -64,17 +64,18 @@ export default function PricingPage() {
   if (selectedTurf) {
     return (
       <div className="space-y-6 p-6">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
+            className="self-start sm:self-center"
             onClick={() => setSelectedTurf(null)}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Manage Pricing</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold">Manage Pricing</h1>
+            <p className="text-sm text-muted-foreground">
               Editing pricing for {selectedTurf.name}
             </p>
           </div>
