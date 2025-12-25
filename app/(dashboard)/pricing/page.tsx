@@ -64,11 +64,10 @@ export default function PricingPage() {
   if (selectedTurf) {
     return (
       <div className="space-y-6 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex flex-row items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
-            className="self-start sm:self-center"
             onClick={() => setSelectedTurf(null)}
           >
             <ArrowLeft className="h-5 w-5" />
