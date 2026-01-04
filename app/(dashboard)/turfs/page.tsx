@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TurfCard } from "@/components/turfs/turf-card";
 import { CreateTurfDialog } from "@/components/turfs/create-turf-dialog";
@@ -54,6 +55,8 @@ export default function TurfsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedTurf, setSelectedTurf] = useState<Turf | null>(null);
 
+  const router = useRouter();
+
   useEffect(() => {
     fetchTurfs();
   }, []);
@@ -100,6 +103,10 @@ export default function TurfsPage() {
   const handleDelete = (turf: Turf) => {
     setSelectedTurf(turf);
     setDeleteDialogOpen(true);
+  };
+  
+  const handleCustomizeTheme = (turf: Turf) => {
+    router.push(`/turfs/${turf.id}/theme`);
   };
 
   // Loading State
@@ -214,6 +221,7 @@ export default function TurfsPage() {
               turf={turf}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onCustomizeTheme={handleCustomizeTheme}
             />
           ))}
         </div>
