@@ -78,9 +78,8 @@ export function ImageUpload({
       const response = await fetch(finalUrl, {
         method: "POST",
         headers: {
-            // Note: Content-Type is set automatically by fetch when body is FormData
-             ...getAuthHeaders(), // Need auth
-             // Remove Content-Type from auth headers if present, let browser set it with boundary
+             ...getAuthHeaders(),
+             "Content-Type": "", // Unset Content-Type to let browser set it with boundary
         },
         body: formData,
       });
