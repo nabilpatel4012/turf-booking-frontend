@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { X, ImagePlus, Loader2, UploadCloud } from "lucide-react";
 import Image from "next/image";
 import { useToast } from "@/components/ui/use-toast";
-import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 
 interface ImageUploadProps {
   value: string[];
@@ -75,7 +75,7 @@ export function ImageUpload({
       // FIX: Ensure endpoint matches backend route
       const finalUrl = getApiUrl(uploadEndpoint.startsWith("/") ? uploadEndpoint : `/${uploadEndpoint}`);
 
-      const response = await fetch(finalUrl, {
+      const response = await fetchWithAuth(finalUrl, {
         method: "POST",
         headers: {
              ...getAuthHeaders(),
