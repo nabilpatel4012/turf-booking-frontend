@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { MapPin } from "lucide-react";
 import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
-import { MapPickerDialog } from "./map-picker-dialog";
+import { AmenitiesInput } from "./amenities-input";
 
 interface CreateTurfDialogProps {
   open: boolean;
@@ -32,6 +32,7 @@ interface CreateTurfDialogProps {
 }
 
 // Define the shape of the form data
+// Update interface
 interface TurfFormData {
   name: string;
   description: string;
@@ -41,11 +42,12 @@ interface TurfFormData {
   zipCode: string;
   phone: string;
   status: string;
-  openingTime: string;
-  closingTime: string;
-  amenities: string;
-  latitude: string; // Stored as string from form/picker, converted to number for API
-  longitude: string; // Stored as string from form/picker, converted to number for API
+  // openingTime: string; // Removed
+  // closingTime: string; // Removed
+  amenities: string[]; // Changed to array
+  googleMapUrl: string; // Added
+  // latitude: string; // Removed
+  // longitude: string; // Removed
   images: string;
   venueType: string;
   shape: string;
@@ -61,11 +63,8 @@ const initialFormData: TurfFormData = {
   zipCode: "",
   phone: "",
   status: "active",
-  openingTime: "06:00",
-  closingTime: "23:00",
-  amenities: "",
-  latitude: "", // Empty string means not set
-  longitude: "", // Empty string means not set
+  amenities: [],
+  googleMapUrl: "",
   images: "",
   venueType: "turf",
   shape: "rectangle",
@@ -80,7 +79,6 @@ export function CreateTurfDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState<TurfFormData>(initialFormData);
-  const [mapOpen, setMapOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,46 +86,21 @@ export function CreateTurfDialog({
     setError("");
 
     try {
-      const payload: { [key: string]: any } = {
+      const payload = {
         ...formData,
-        amenities: formData.amenities
-          ? formData.amenities
-              .split(",")
-              .map((a) => a.trim().toLowerCase().replace(/ /g, "_"))
-              .filter(Boolean)
-          : [],
+        amenities: formData.amenities, // Already an array
         images: formData.images
           ? formData.images
               .split(",")
               .map((url) => url.trim())
               .filter(Boolean)
           : [],
-        openingTime: `${formData.openingTime}:00`,
-        closingTime: `${formData.closingTime}:00`,
+        // Removed time formatting as fields are gone
       };
-
-      if (formData.latitude) {
-        payload.latitude = parseFloat(formData.latitude);
-      } else {
-        delete payload.latitude; // Ensure it's not present if empty, though spreading formData won't include it if we manage the spread carefully. Explicitly delete for safety.
-      }
-
-      if (formData.longitude) {
-        payload.longitude = parseFloat(formData.longitude);
-      } else {
-        delete payload.longitude; // Explicitly delete for safety.
-      }
-
-      // We rely on the MapPickerDialog setting a stringified number or an empty string.
-      // The `delete` is added for explicit clarity, although not strictly necessary
-      // since the original `...formData` spread included it *as a string* and the
-      // `if` block only overrides it with a number.
 
       const response = await fetchWithAuth(getApiUrl("/turfs/admin/create"), {
         method: "POST",
         headers: getAuthHeaders(),
-        // Only spread the other properties, then explicitly add the coordinates
-        // to ensure type correctness and omission.
         body: JSON.stringify(payload),
       });
 
@@ -149,318 +122,250 @@ export function CreateTurfDialog({
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create New Turf</DialogTitle>
-            <DialogDescription>
-              Add a new turf to your management system.
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Create New Venue</DialogTitle>
+          <DialogDescription>
+            Add a new venue to your management system.
+          </DialogDescription>
+        </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-            {/* ... other form fields (omitted for brevity) */}
-
-            {/* Name & Type */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Venue Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="venueType">Venue Type *</Label>
-                <Select
-                  value={formData.venueType}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, venueType: value })
-                  }
-                  disabled={isLoading}
-                >
-                  <SelectTrigger id="venueType">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="turf">Turf</SelectItem>
-                    <SelectItem value="badminton">Badminton Court</SelectItem>
-                    <SelectItem value="pickleball">Pickleball Court</SelectItem>
-                    <SelectItem value="table_tennis">
-                      Table Tennis Court
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Shape & Size */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="shape">Shape</Label>
-                <Select
-                  value={formData.shape}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, shape: value })
-                  }
-                  disabled={isLoading}
-                >
-                  <SelectTrigger id="shape">
-                    <SelectValue placeholder="Select shape" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rectangle">Regular (Rectangle)</SelectItem>
-                    <SelectItem value="square">Square</SelectItem>
-                    <SelectItem value="oval">Oval</SelectItem>
-                    <SelectItem value="circle">360 Degree (Circle)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="size">Size (in ft)</Label>
-                <Input
-                  id="size"
-                  value={formData.size}
-                  onChange={(e) =>
-                    setFormData({ ...formData, size: e.target.value })
-                  }
-                  placeholder="e.g. 100x60"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone *</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status *</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, status: value })
-                  }
-                  disabled={isLoading}
-                >
-                  <SelectTrigger id="status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
+        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+          
+          {/* Name & Type */}
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="address">Address *</Label>
+              <Label htmlFor="name">Venue Name *</Label>
               <Input
-                id="address"
-                value={formData.address}
+                id="name"
+                value={formData.name}
                 onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
+                  setFormData({ ...formData, name: e.target.value })
                 }
                 required
                 disabled={isLoading}
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city">City *</Label>
-                <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) =>
-                    setFormData({ ...formData, city: e.target.value })
-                  }
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="state">State *</Label>
-                <Input
-                  id="state"
-                  value={formData.state}
-                  onChange={(e) =>
-                    setFormData({ ...formData, state: e.target.value })
-                  }
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="zipCode">Zip Code</Label>
-                <Input
-                  id="zipCode"
-                  value={formData.zipCode}
-                  onChange={(e) =>
-                    setFormData({ ...formData, zipCode: e.target.value })
-                  }
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            {/* Map Picker Section */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="latitude">Latitude</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="latitude"
-                    type="number"
-                    value={formData.latitude}
-                    disabled
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setMapOpen(true)}
-                    className="flex items-center gap-1"
-                  >
-                    <MapPin className="h-4 w-4" /> Select
-                  </Button>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="longitude">Longitude</Label>
-                <Input
-                  id="longitude"
-                  type="number"
-                  value={formData.longitude}
-                  disabled
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="openingTime">Opening Time *</Label>
-                <Input
-                  id="openingTime"
-                  type="time"
-                  value={formData.openingTime}
-                  onChange={(e) =>
-                    setFormData({ ...formData, openingTime: e.target.value })
-                  }
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="closingTime">Closing Time *</Label>
-                <Input
-                  id="closingTime"
-                  type="time"
-                  value={formData.closingTime}
-                  onChange={(e) =>
-                    setFormData({ ...formData, closingTime: e.target.value })
-                  }
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            {/* Optional Fields */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
+              <Label htmlFor="venueType">Venue Type *</Label>
+              <Select
+                value={formData.venueType}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, venueType: value })
                 }
-                disabled={isLoading}
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="amenities">Amenities (comma-separated)</Label>
-              <Input
-                id="amenities"
-                value={formData.amenities}
-                onChange={(e) =>
-                  setFormData({ ...formData, amenities: e.target.value })
-                }
-                disabled={isLoading}
-                placeholder="parking, water"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="images">Image URLs (comma-separated)</Label>
-              <Textarea
-                id="images"
-                value={formData.images}
-                onChange={(e) =>
-                  setFormData({ ...formData, images: e.target.value })
-                }
-                disabled={isLoading}
-                placeholder="https://example.com/img1.jpg, ..."
-                rows={2}
-              />
-            </div>
-
-            {error && (
-              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-                {error}
-              </div>
-            )}
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
                 disabled={isLoading}
               >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create Turf"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+                <SelectTrigger id="venueType">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="turf">Turf</SelectItem>
+                  <SelectItem value="badminton">Badminton Court</SelectItem>
+                  <SelectItem value="pickleball">Pickleball Court</SelectItem>
+                  <SelectItem value="table_tennis">
+                    Table Tennis Court
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-      {/* Map Picker Modal */}
-      <MapPickerDialog
-        open={mapOpen}
-        onOpenChange={setMapOpen}
-        onSelect={(lat, lng) =>
-          setFormData({
-            ...formData,
-            // Ensure values are stored as strings to match form state/input expectation
-            latitude: lat.toString(),
-            longitude: lng.toString(),
-          })
-        }
-      />
-    </>
+          {/* Shape & Size */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="shape">Shape</Label>
+              <Select
+                value={formData.shape}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, shape: value })
+                }
+                disabled={isLoading}
+              >
+                <SelectTrigger id="shape">
+                  <SelectValue placeholder="Select shape" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="rectangle">Regular (Rectangle)</SelectItem>
+                  <SelectItem value="square">Square</SelectItem>
+                  <SelectItem value="oval">Oval</SelectItem>
+                  <SelectItem value="circle">360 Degree (Circle)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="size">Size (in ft)</Label>
+              <Input
+                id="size"
+                value={formData.size}
+                onChange={(e) =>
+                  setFormData({ ...formData, size: e.target.value })
+                }
+                placeholder="e.g. 100x60"
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone *</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status *</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, status: value })
+                }
+                disabled={isLoading}
+              >
+                <SelectTrigger id="status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address">Address *</Label>
+            <Input
+              id="address"
+              value={formData.address}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
+              required
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="city">City *</Label>
+              <Input
+                id="city"
+                value={formData.city}
+                onChange={(e) =>
+                  setFormData({ ...formData, city: e.target.value })
+                }
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="state">State *</Label>
+              <Input
+                id="state"
+                value={formData.state}
+                onChange={(e) =>
+                  setFormData({ ...formData, state: e.target.value })
+                }
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="zipCode">Zip Code</Label>
+              <Input
+                id="zipCode"
+                value={formData.zipCode}
+                onChange={(e) =>
+                  setFormData({ ...formData, zipCode: e.target.value })
+                }
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          {/* Google Map URL - Replaces Lat/Long */}
+          <div className="space-y-2">
+            <Label htmlFor="googleMapUrl">Google Map URL</Label>
+            <Input
+              id="googleMapUrl"
+              value={formData.googleMapUrl}
+              onChange={(e) =>
+                setFormData({ ...formData, googleMapUrl: e.target.value })
+              }
+              placeholder="https://maps.google.com/..."
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Optional Fields */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              disabled={isLoading}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Amenities</Label>
+            <AmenitiesInput 
+                value={formData.amenities}
+                onChange={(amenities) => setFormData({...formData, amenities})}
+                disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="images">Image URLs (comma-separated)</Label>
+            <Textarea
+              id="images"
+              value={formData.images}
+              onChange={(e) =>
+                setFormData({ ...formData, images: e.target.value })
+              }
+              disabled={isLoading}
+              placeholder="https://example.com/img1.jpg, ..."
+              rows={2}
+            />
+          </div>
+
+          {error && (
+            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+              {error}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Creating..." : "Create Venue"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
+import { AmenitiesInput } from "./amenities-input";
 
 // Interface remains comprehensive
 interface Turf {
@@ -34,6 +35,7 @@ interface Turf {
   zipCode: string;
   latitude: string;
   longitude: string;
+  googleMapUrl?: string;
   phone: string;
   images: string[];
   amenities: string[];
@@ -60,6 +62,7 @@ interface EditTurfDialogProps {
 }
 
 // Define the shape of the form data state
+// Define the shape of the form data state
 interface EditTurfFormData {
   name: string;
   description: string;
@@ -69,11 +72,8 @@ interface EditTurfFormData {
   zipCode: string;
   phone: string;
   status: string;
-  openingTime: string;
-  closingTime: string;
-  amenities: string;
-  latitude: string; // Stored as string from input
-  longitude: string; // Stored as string from input
+  amenities: string[];
+  googleMapUrl: string;
   images: string;
   venueType: string;
   shape: string;
@@ -111,11 +111,8 @@ export function EditTurfDialog({
     zipCode: "",
     phone: "",
     status: "active",
-    openingTime: "06:00",
-    closingTime: "23:00",
-    amenities: "",
-    latitude: "",
-    longitude: "",
+    amenities: [],
+    googleMapUrl: "",
     images: "",
     venueType: "turf",
     shape: "rectangle",
@@ -138,13 +135,8 @@ export function EditTurfDialog({
         zipCode: turf.zipCode ?? "",
         phone: turf.phone ?? "",
         status: turf.status ?? "active",
-        // Extract HH:mm part from time string (e.g., '06:00:00' -> '06:00')
-        openingTime: turf.openingTime?.substring(0, 5) ?? "06:00",
-        closingTime: turf.closingTime?.substring(0, 5) ?? "23:00",
-        amenities: turf.amenities?.join(", ") ?? "",
-        // Convert number coordinates back to string for the form input
-        latitude: turf.latitude?.toString() ?? "",
-        longitude: turf.longitude?.toString() ?? "",
+        amenities: turf.amenities ?? [],
+        googleMapUrl: turf.googleMapUrl ?? "",
         images: turf.images?.join(", ") ?? "",
         venueType: turf.venueType ?? "turf",
         shape: turf.shape ?? "rectangle",
@@ -179,14 +171,10 @@ export function EditTurfDialog({
     setError("");
 
     try {
-      // Destructure out the coordinates and list fields for special handling
+      // Destructure out complex fields
       const {
-        latitude,
-        longitude,
         amenities,
         images,
-        openingTime,
-        closingTime,
         themePreset,
         primaryColor,
         secondaryColor,
@@ -195,24 +183,14 @@ export function EditTurfDialog({
         ...rest
       } = formData;
 
-      const payload: { [key: string]: any } = {
+      const payload = {
         ...rest,
-
-        // Handle list fields
-        amenities: amenities
-          .split(",")
-          .map((a) => a.trim().toLowerCase().replace(/ /g, "_"))
-          .filter(Boolean),
+        amenities, // Already array
         images: images
-          .split(",")
-          .map((url) => url.trim())
-          .filter(Boolean),
-
-        // Handle time fields (ensure :00 is appended)
-        openingTime: `${openingTime}:00`,
-        closingTime: `${closingTime}:00`,
-
-        // Handle Theme as a logic block for backend to process
+          ? images.split(",").map((url) => url.trim()).filter(Boolean)
+          : [],
+        
+        // Theme logic
         theme: {
             preset: themePreset,
             primaryColor,
@@ -221,16 +199,6 @@ export function EditTurfDialog({
             layout
         }
       };
-
-      // ✅ CORE LOGIC: Convert to numerical and omit if empty string
-      if (latitude) {
-        payload.latitude = parseFloat(latitude); // Set as number
-      }
-
-      if (longitude) {
-        payload.longitude = parseFloat(longitude); // Set as number
-      }
-      // If latitude or longitude are empty strings (""), they are not added to the payload.
 
       const response = await fetchWithAuth(
         getApiUrl(`/turfs/admin/${turf.id}`),
@@ -484,16 +452,26 @@ export function EditTurfDialog({
                 </div>
              </div>
              
-             {/* Additional fields hidden for brevity but logic preserves them if they existed */}
+             {/* Google Map URL - Replaces Lat/Long */}
              <div className="space-y-2">
-                <Label htmlFor="edit-amenities">Amenities</Label>
+                <Label htmlFor="edit-googleMapUrl">Google Map URL</Label>
                 <Input
-                id="edit-amenities"
-                value={formData.amenities}
-                onChange={(e) =>
-                    setFormData({ ...formData, amenities: e.target.value })
-                }
-                disabled={isLoading}
+                  id="edit-googleMapUrl"
+                  value={formData.googleMapUrl}
+                  onChange={(e) =>
+                    setFormData({ ...formData, googleMapUrl: e.target.value })
+                  }
+                  placeholder="https://maps.google.com/..."
+                  disabled={isLoading}
+                />
+             </div>
+
+             <div className="space-y-2">
+                <Label>Amenities</Label>
+                <AmenitiesInput 
+                    value={formData.amenities}
+                    onChange={(amenities) => setFormData({...formData, amenities})}
+                    disabled={isLoading}
                 />
             </div>
           </div>
