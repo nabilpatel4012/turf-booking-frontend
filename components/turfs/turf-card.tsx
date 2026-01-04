@@ -26,14 +26,15 @@ interface Turf {
   city: string;
   state: string;
   zipCode: string;
-  latitude: string;
-  longitude: string;
+  latitude?: string;
+  longitude?: string;
+  googleMapUrl?: string;
   phone: string;
   images: string[];
   amenities: string[];
   status: string;
-  openingTime: string;
-  closingTime: string;
+  openingTime?: string;
+  closingTime?: string;
   createdAt: string;
   owner: Owner;
 }

@@ -23,14 +23,15 @@ interface Turf {
   city: string;
   state: string;
   zipCode: string;
-  latitude: string;
-  longitude: string;
+  latitude?: string;
+  longitude?: string;
+  googleMapUrl?: string; // Added
   phone: string;
   images: string[];
   amenities: string[];
   status: string;
-  openingTime: string;
-  closingTime: string;
+  openingTime?: string;
+  closingTime?: string;
   venueType?: string;
   shape?: string;
   size?: string;
