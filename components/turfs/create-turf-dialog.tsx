@@ -24,6 +24,7 @@ import {
 import { MapPin } from "lucide-react";
 import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 import { AmenitiesInput } from "./amenities-input";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 interface CreateTurfDialogProps {
   open: boolean;
@@ -32,7 +33,6 @@ interface CreateTurfDialogProps {
 }
 
 // Define the shape of the form data
-// Update interface
 interface TurfFormData {
   name: string;
   description: string;
@@ -42,13 +42,10 @@ interface TurfFormData {
   zipCode: string;
   phone: string;
   status: string;
-  // openingTime: string; // Removed
-  // closingTime: string; // Removed
-  amenities: string[]; // Changed to array
-  googleMapUrl: string; // Added
-  // latitude: string; // Removed
-  // longitude: string; // Removed
-  images: string;
+  amenities: string[];
+  googleMapUrl: string;
+  images: string[];
+  logo: string;
   venueType: string;
   shape: string;
   size: string;
@@ -65,7 +62,8 @@ const initialFormData: TurfFormData = {
   status: "active",
   amenities: [],
   googleMapUrl: "",
-  images: "",
+  images: [],
+  logo: "",
   venueType: "turf",
   shape: "rectangle",
   size: "",
@@ -88,14 +86,7 @@ export function CreateTurfDialog({
     try {
       const payload = {
         ...formData,
-        amenities: formData.amenities, // Already an array
-        images: formData.images
-          ? formData.images
-              .split(",")
-              .map((url) => url.trim())
-              .filter(Boolean)
-          : [],
-        // Removed time formatting as fields are gone
+        // amenities and images are already arrays
       };
 
       const response = await fetchWithAuth(getApiUrl("/turfs/admin/create"), {
@@ -332,16 +323,26 @@ export function CreateTurfDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="images">Image URLs (comma-separated)</Label>
-            <Textarea
-              id="images"
-              value={formData.images}
-              onChange={(e) =>
-                setFormData({ ...formData, images: e.target.value })
-              }
-              disabled={isLoading}
-              placeholder="https://example.com/img1.jpg, ..."
-              rows={2}
+            <Label>Venue Logo</Label>
+            <ImageUpload 
+                value={formData.logo ? [formData.logo] : []}
+                onChange={(urls) => setFormData({...formData, logo: urls[0] || ""})}
+                onRemove={() => setFormData({...formData, logo: ""})}
+                maxFiles={1}
+                multiple={false}
+                disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Venue Images</Label>
+            <ImageUpload 
+                value={formData.images}
+                onChange={(urls) => setFormData({...formData, images: urls})}
+                onRemove={(url) => setFormData({...formData, images: formData.images.filter((img) => img !== url)})}
+                multiple={true}
+                maxFiles={10}
+                disabled={isLoading}
             />
           </div>
 

@@ -24,6 +24,8 @@ import {
 import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 import { AmenitiesInput } from "./amenities-input";
 
+import { ImageUpload } from "@/components/ui/image-upload";
+
 // Interface remains comprehensive
 interface Turf {
   id: string;
@@ -45,7 +47,7 @@ interface Turf {
   venueType?: string;
   shape?: string;
   size?: string;
-  theme?: any;
+  logo?: string;
   createdAt: string;
   owner: Owner;
 }
@@ -62,7 +64,6 @@ interface EditTurfDialogProps {
 }
 
 // Define the shape of the form data state
-// Define the shape of the form data state
 interface EditTurfFormData {
   name: string;
   description: string;
@@ -74,25 +75,12 @@ interface EditTurfFormData {
   status: string;
   amenities: string[];
   googleMapUrl: string;
-  images: string;
+  images: string[];
+  logo: string;
   venueType: string;
   shape: string;
   size: string;
-  // Theme fields
-  themePreset: string;
-  primaryColor: string;
-  secondaryColor: string;
-  backgroundColor: string;
-  layout: string;
 }
-
-const THEME_PRESETS = {
-  modern: { primary: "#0f172a", secondary: "#3b82f6", bg: "#ffffff" },
-  classic: { primary: "#1e293b", secondary: "#e2e8f0", bg: "#f8fafc" },
-  vibrant: { primary: "#7c3aed", secondary: "#f472b6", bg: "#fff1f2" },
-  dark: { primary: "#000000", secondary: "#22d3ee", bg: "#0f172a" },
-  minimal: { primary: "#333333", secondary: "#999999", bg: "#ffffff" },
-};
 
 export function EditTurfDialog({
   turf,
@@ -113,15 +101,11 @@ export function EditTurfDialog({
     status: "active",
     amenities: [],
     googleMapUrl: "",
-    images: "",
+    images: [],
+    logo: "",
     venueType: "turf",
     shape: "rectangle",
     size: "",
-    themePreset: "modern",
-    primaryColor: "#0f172a",
-    secondaryColor: "#3b82f6",
-    backgroundColor: "#ffffff",
-    layout: "default",
   });
 
   useEffect(() => {
@@ -137,31 +121,14 @@ export function EditTurfDialog({
         status: turf.status ?? "active",
         amenities: turf.amenities ?? [],
         googleMapUrl: turf.googleMapUrl ?? "",
-        images: turf.images?.join(", ") ?? "",
+        images: turf.images ?? [],
+        logo: turf.logo ?? "",
         venueType: turf.venueType ?? "turf",
         shape: turf.shape ?? "rectangle",
         size: turf.size ?? "",
-        themePreset: turf.theme?.preset ?? "modern",
-        primaryColor: turf.theme?.primaryColor ?? "#0f172a",
-        secondaryColor: turf.theme?.secondaryColor ?? "#3b82f6",
-        backgroundColor: turf.theme?.backgroundColor ?? "#ffffff",
-        layout: turf.theme?.layout ?? "default",
       });
     }
   }, [turf]);
-
-  const handlePresetChange = (preset: string) => {
-    const theme = THEME_PRESETS[preset as keyof typeof THEME_PRESETS];
-    if (theme) {
-      setFormData((prev) => ({
-        ...prev,
-        themePreset: preset,
-        primaryColor: theme.primary,
-        secondaryColor: theme.secondary,
-        backgroundColor: theme.bg,
-      }));
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,33 +138,9 @@ export function EditTurfDialog({
     setError("");
 
     try {
-      // Destructure out complex fields
-      const {
-        amenities,
-        images,
-        themePreset,
-        primaryColor,
-        secondaryColor,
-        backgroundColor,
-        layout,
-        ...rest
-      } = formData;
-
       const payload = {
-        ...rest,
-        amenities, // Already array
-        images: images
-          ? images.split(",").map((url) => url.trim()).filter(Boolean)
-          : [],
-        
-        // Theme logic
-        theme: {
-            preset: themePreset,
-            primaryColor,
-            secondaryColor,
-            backgroundColor,
-            layout
-        }
+        ...formData,
+        // Arrays are already handled correctly
       };
 
       const response = await fetchWithAuth(
@@ -329,98 +272,31 @@ export function EditTurfDialog({
           </div>
 
           <div className="space-y-4 border-t pt-4">
-            <h3 className="font-semibold text-sm uppercase text-muted-foreground">Theme & Layout</h3>
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="theme-preset">Preset</Label>
-                    <Select
-                        value={formData.themePreset}
-                        onValueChange={handlePresetChange}
-                        disabled={isLoading}
-                    >
-                        <SelectTrigger id="theme-preset">
-                        <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                        <SelectItem value="modern">Modern</SelectItem>
-                        <SelectItem value="classic">Classic</SelectItem>
-                        <SelectItem value="vibrant">Vibrant</SelectItem>
-                        <SelectItem value="dark">Dark</SelectItem>
-                        <SelectItem value="minimal">Minimal</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="layout">Layout</Label>
-                     <Select
-                        value={formData.layout}
-                        onValueChange={(value) =>
-                        setFormData({ ...formData, layout: value })
-                        }
-                        disabled={isLoading}
-                    >
-                        <SelectTrigger id="layout">
-                        <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                             <SelectItem value="default">Default</SelectItem>
-                             <SelectItem value="hero-focus">Hero Focus</SelectItem>
-                             <SelectItem value="grid-view">Grid View</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+            <h3 className="font-semibold text-sm uppercase text-muted-foreground">Media</h3>
+            
+            <div className="space-y-2">
+                <Label>Venue Logo</Label>
+                <ImageUpload 
+                    value={formData.logo ? [formData.logo] : []}
+                    onChange={(urls) => setFormData({...formData, logo: urls[0] || ""})}
+                    onRemove={() => setFormData({...formData, logo: ""})}
+                    maxFiles={1}
+                    multiple={false}
+                    disabled={isLoading}
+                />
             </div>
 
-             <div className="grid grid-cols-3 gap-2">
-                 <div className="space-y-1">
-                     <Label className="text-xs">Primary</Label>
-                     <div className="flex gap-2">
-                        <Input 
-                            type="color" 
-                            className="h-8 w-8 p-0 border-0"
-                            value={formData.primaryColor || "#000000"}
-                            onChange={(e) => setFormData({...formData, primaryColor: e.target.value})}
-                        />
-                        <Input 
-                            className="h-8 text-xs font-mono"
-                            value={formData.primaryColor || ""}
-                            onChange={(e) => setFormData({...formData, primaryColor: e.target.value})}
-                        />
-                     </div>
-                 </div>
-                 <div className="space-y-1">
-                     <Label className="text-xs">Secondary</Label>
-                     <div className="flex gap-2">
-                        <Input 
-                            type="color" 
-                            className="h-8 w-8 p-0 border-0"
-                            value={formData.secondaryColor || "#000000"}
-                            onChange={(e) => setFormData({...formData, secondaryColor: e.target.value})}
-                        />
-                        <Input 
-                            className="h-8 text-xs font-mono"
-                            value={formData.secondaryColor || ""}
-                            onChange={(e) => setFormData({...formData, secondaryColor: e.target.value})}
-                        />
-                     </div>
-                 </div>
-                 <div className="space-y-1">
-                     <Label className="text-xs">Background</Label>
-                     <div className="flex gap-2">
-                        <Input 
-                            type="color" 
-                            className="h-8 w-8 p-0 border-0"
-                            value={formData.backgroundColor || "#ffffff"}
-                            onChange={(e) => setFormData({...formData, backgroundColor: e.target.value})}
-                        />
-                        <Input 
-                            className="h-8 text-xs font-mono"
-                            value={formData.backgroundColor || ""}
-                            onChange={(e) => setFormData({...formData, backgroundColor: e.target.value})}
-                        />
-                     </div>
-                 </div>
-             </div>
+            <div className="space-y-2">
+                <Label>Venue Images</Label>
+                <ImageUpload 
+                    value={formData.images}
+                    onChange={(urls) => setFormData({...formData, images: urls})}
+                    onRemove={(url) => setFormData({...formData, images: formData.images.filter((img) => img !== url)})}
+                    multiple={true}
+                    maxFiles={10}
+                    disabled={isLoading}
+                />
+            </div>
           </div>
 
           <div className="space-y-4 border-t pt-4">
