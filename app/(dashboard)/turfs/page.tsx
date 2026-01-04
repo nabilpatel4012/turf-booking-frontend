@@ -31,6 +31,9 @@ interface Turf {
   status: string;
   openingTime: string;
   closingTime: string;
+  venueType?: string;
+  shape?: string;
+  size?: string;
   createdAt: string;
   owner: Owner;
 }
@@ -76,11 +79,11 @@ export default function TurfsPage() {
           setTurfs([]);
         }
       } else {
-        setError(`Failed to load turfs (${response.status})`);
+        setError(`Failed to load venues (${response.status})`);
         setTurfs([]);
       }
     } catch (error) {
-      console.error("[v0] Failed to fetch turfs:", error);
+      console.error("[v0] Failed to fetch venues:", error);
       setError("Network error. Please check your connection.");
       setTurfs([]);
     } finally {
@@ -139,14 +142,14 @@ export default function TurfsPage() {
       <div className="p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold">Turfs</h1>
+            <h1 className="text-3xl font-bold">Venues</h1>
             <p className="text-muted-foreground mt-2">
-              Manage your turf facilities
+              Manage your sports facilities
             </p>
           </div>
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Turf
+            Add Venue
           </Button>
         </div>
 
@@ -154,7 +157,7 @@ export default function TurfsPage() {
           <div className="rounded-full bg-destructive/10 p-3 mb-4">
             <AlertCircle className="h-6 w-6 text-destructive" />
           </div>
-          <h3 className="font-semibold text-lg mb-1">Failed to load turfs</h3>
+          <h3 className="font-semibold text-lg mb-1">Failed to load venues</h3>
           <p className="text-sm text-muted-foreground mb-4 max-w-md">{error}</p>
           <Button onClick={fetchTurfs} variant="outline">
             <Loader2 className="mr-2 h-4 w-4" />
@@ -176,14 +179,14 @@ export default function TurfsPage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Turfs</h1>
+          <h1 className="text-3xl font-bold">Venues</h1>
           <p className="text-muted-foreground mt-2">
-            Manage your turf facilities
+            Manage your sports facilities
           </p>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Turf
+          Add Venue
         </Button>
       </div>
 
@@ -192,14 +195,14 @@ export default function TurfsPage() {
           <div className="rounded-full bg-muted p-4 mb-4">
             <Plus className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="font-semibold text-lg mb-1">No turfs yet</h3>
+          <h3 className="font-semibold text-lg mb-1">No venues yet</h3>
           <p className="text-sm text-muted-foreground mb-4 max-w-md">
-            Get started by creating your first turf facility. You can manage
-            bookings, pricing, and availability once you add a turf.
+            Get started by creating your first venue. You can manage
+            bookings, pricing, and availability once you add a venue.
           </p>
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Your First Turf
+            Add Your First Venue
           </Button>
         </div>
       ) : (

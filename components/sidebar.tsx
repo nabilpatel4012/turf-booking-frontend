@@ -22,7 +22,7 @@ import { useState, useTransition } from "react";
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Bookings", href: "/bookings", icon: Calendar },
-  { name: "Turfs", href: "/turfs", icon: MapPin },
+  { name: "Venues", href: "/turfs", icon: MapPin },
   { name: "Announcements", href: "/announcements", icon: Megaphone },
   { name: "Pricing", href: "/pricing", icon: DollarSign },
   { name: "Tournaments", href: "/tournaments", icon: Trophy, disabled: true },
@@ -50,7 +50,7 @@ export function Sidebar() {
     <div className="flex h-full flex-col border-r border-border bg-card">
       {/* Header */}
       <div className="flex h-16 items-center border-b border-border px-6">
-        <h1 className="text-xl font-bold text-primary">Turf Admin</h1>
+        <h1 className="text-xl font-bold text-primary">Venue Admin</h1>
       </div>
 
       {/* Navigation Links */}

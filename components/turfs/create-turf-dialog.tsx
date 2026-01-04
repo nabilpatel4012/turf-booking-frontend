@@ -47,6 +47,9 @@ interface TurfFormData {
   latitude: string; // Stored as string from form/picker, converted to number for API
   longitude: string; // Stored as string from form/picker, converted to number for API
   images: string;
+  venueType: string;
+  shape: string;
+  size: string;
 }
 
 const initialFormData: TurfFormData = {
@@ -64,6 +67,9 @@ const initialFormData: TurfFormData = {
   latitude: "", // Empty string means not set
   longitude: "", // Empty string means not set
   images: "",
+  venueType: "turf",
+  shape: "rectangle",
+  size: "",
 };
 
 export function CreateTurfDialog({
@@ -156,18 +162,80 @@ export function CreateTurfDialog({
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             {/* ... other form fields (omitted for brevity) */}
 
-            {/* Required Fields (rest of the form remains unchanged) */}
-            <div className="space-y-2">
-              <Label htmlFor="name">Turf Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                required
-                disabled={isLoading}
-              />
+            {/* Name & Type */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Venue Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="venueType">Venue Type *</Label>
+                <Select
+                  value={formData.venueType}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, venueType: value })
+                  }
+                  disabled={isLoading}
+                >
+                  <SelectTrigger id="venueType">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="turf">Turf</SelectItem>
+                    <SelectItem value="badminton">Badminton Court</SelectItem>
+                    <SelectItem value="pickleball">Pickleball Court</SelectItem>
+                    <SelectItem value="table_tennis">
+                      Table Tennis Court
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Shape & Size */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="shape">Shape</Label>
+                <Select
+                  value={formData.shape}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, shape: value })
+                  }
+                  disabled={isLoading}
+                >
+                  <SelectTrigger id="shape">
+                    <SelectValue placeholder="Select shape" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rectangle">Regular (Rectangle)</SelectItem>
+                    <SelectItem value="square">Square</SelectItem>
+                    <SelectItem value="oval">Oval</SelectItem>
+                    <SelectItem value="circle">360 Degree (Circle)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="size">Size (in ft)</Label>
+                <Input
+                  id="size"
+                  value={formData.size}
+                  onChange={(e) =>
+                    setFormData({ ...formData, size: e.target.value })
+                  }
+                  placeholder="e.g. 100x60"
+                  disabled={isLoading}
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
