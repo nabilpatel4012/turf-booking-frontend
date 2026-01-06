@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { X, ImagePlus, Loader2, UploadCloud } from "lucide-react";
 import Image from "next/image";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 
 interface ImageUploadProps {
@@ -31,7 +31,8 @@ export function ImageUpload({
   additionalData = {},
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const { toast } = useToast();
+
+  // const { toast } = useToast(); -> Removed
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -39,20 +40,16 @@ export function ImageUpload({
 
     // Validation
     if (multiple && value.length + files.length > maxFiles) {
-        toast({
-            title: "Limit Exceeded",
+        toast.error("Limit Exceeded", {
             description: `You can only upload a maximum of ${maxFiles} images.`,
-            variant: "destructive",
         });
         return;
     }
 
     for (let i = 0; i < files.length; i++) {
         if (files[i].size > maxSize * 1024 * 1024) {
-            toast({
-                title: "File Too Large",
+            toast.error("File Too Large", {
                 description: `File ${files[i].name} exceeds the ${maxSize}MB limit.`,
-                variant: "destructive",
             });
             return;
         }
@@ -80,14 +77,19 @@ export function ImageUpload({
           });
           
           const results = await Promise.all(uploadPromises);
-          const newUrls = results.map(r => r.url);
+          
+          // Helper to ensure URL has protocol
+          const ensureProtocol = (url: string) => {
+              if (!url) return "";
+              if (url.startsWith("http://") || url.startsWith("https://")) return url;
+              return `https://${url}`;
+          };
+
+          const newUrls = results.map(r => ensureProtocol(r.url));
           
           onChange([...value, ...newUrls]);
           
-          toast({
-            title: "Success",
-            description: "Images uploaded successfully",
-          });
+          toast.success("Images uploaded successfully");
           return;
       }
 
@@ -130,27 +132,30 @@ export function ImageUpload({
 
       const data = await response.json();
 
+      // Helper to ensure URL has protocol
+      const ensureProtocol = (url: string) => {
+          if (!url) return "";
+          if (url.startsWith("http://") || url.startsWith("https://")) return url;
+          return `https://${url}`;
+      };
+
       if (multiple) {
           if (data.urls) {
-               onChange([...value, ...data.urls]);
+               const validUrls = (data.urls as string[]).map(ensureProtocol);
+               onChange([...value, ...validUrls]);
           } else if (data.url) {
-               onChange([...value, data.url]);
+               onChange([...value, ensureProtocol(data.url)]);
           }
       } else {
-        onChange([data.url]);
+        onChange([ensureProtocol(data.url)]);
       }
       
-      toast({
-        title: "Success",
-        description: "Image uploaded successfully",
-      });
+      toast.success("Image uploaded successfully");
 
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Something went wrong during upload.",
-        variant: "destructive",
       });
     } finally {
       setIsUploading(false);

@@ -105,9 +105,7 @@ export default function TurfsPage() {
     setDeleteDialogOpen(true);
   };
   
-  const handleCustomizeTheme = (turf: Turf) => {
-    router.push(`/turfs/${turf.id}/theme`);
-  };
+
 
   // Loading State
   if (isLoading) {
@@ -221,7 +219,7 @@ export default function TurfsPage() {
               turf={turf}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onCustomizeTheme={handleCustomizeTheme}
+
             />
           ))}
         </div>

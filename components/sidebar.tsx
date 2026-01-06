@@ -22,7 +22,7 @@ import { useState, useTransition } from "react";
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Bookings", href: "/bookings", icon: Calendar },
-  { name: "Venues", href: "/turfs", icon: MapPin },
+  { name: "Venues", href: "/venues", icon: MapPin },
   { name: "Announcements", href: "/announcements", icon: Megaphone },
   { name: "Pricing", href: "/pricing", icon: DollarSign },
   { name: "Tournaments", href: "/tournaments", icon: Trophy, disabled: true },

@@ -43,10 +43,10 @@ interface TurfCardProps {
   turf: Turf;
   onEdit: (turf: Turf) => void;
   onDelete: (turf: Turf) => void;
-  onCustomizeTheme?: (turf: Turf) => void;
+
 }
 
-export function TurfCard({ turf, onEdit, onDelete, onCustomizeTheme }: TurfCardProps) {
+export function TurfCard({ turf, onEdit, onDelete }: TurfCardProps) {
   const isActive = turf.status === "active";
 
   return (
@@ -105,17 +105,7 @@ export function TurfCard({ turf, onEdit, onDelete, onCustomizeTheme }: TurfCardP
         )}
       </CardContent>
       <CardFooter className="flex gap-2 pt-4">
-        {onCustomizeTheme && (
-           <Button
-            variant="outline"
-            className="flex-1"
-            onClick={() => onCustomizeTheme(turf)}
-            title="Customize Theme"
-           >
-             <Palette className="mr-2 h-4 w-4" />
-             Theme
-           </Button>
-        )}
+
         <Button
           variant="outline"
           className="flex-1"
