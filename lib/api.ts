@@ -24,12 +24,16 @@ export async function fetchWithAuth(
     },
   };
 
-  // Only set Content-Type to application/json if body is NOT FormData
-  // and Content-Type is not already set in options.headers
-  if (
-    !(options.body instanceof FormData) &&
-    !(options.headers as any)?.["Content-Type"]
-  ) {
+  // FIX: If body is FormData, we MUST NOT set Content-Type to application/json
+  // In fact, we should remove it if it was passed in options.headers (e.g. from getAuthHeaders)
+  // so the browser can set the correct boundary.
+  if (options.body instanceof FormData) {
+    if ((fetchOptions.headers as any)["Content-Type"]) {
+        delete (fetchOptions.headers as any)["Content-Type"];
+    }
+  } else if (!(options.headers as any)?.["Content-Type"]) {
+    // Only set Content-Type to application/json if body is NOT FormData
+    // and Content-Type is not already set in options.headers
     (fetchOptions.headers as any)["Content-Type"] = "application/json";
   }
 
