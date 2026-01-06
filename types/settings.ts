@@ -22,7 +22,7 @@ export interface TurfSettings {
   };
   payment: {
     requireAdvance: boolean;
-    advancePercentage: number;
+    advanceAmount: number;
     refundEnabled: boolean;
     refundPercentage: number;
   };

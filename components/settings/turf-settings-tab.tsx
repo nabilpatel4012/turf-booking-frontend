@@ -24,7 +24,7 @@ import TurfSelector from "./turf/turf-selector";
 import BookingStatusCard from "./turf/booking-status-card";
 import GeneralSettingsCard from "./turf/general-settings-card";
 // import BookingRulesCard from "./turf/BookingRulesCard";
-// import PaymentSettingsCard from "./turf/PaymentSettingsCard";
+import PaymentSettingsCard from "./turf/payment-settings-card";
 // import TurfNotificationsCard from "./turf/TurfNotificationsCard";
 import type { Turf, TurfSettings } from "@/types/settings";
 
@@ -94,7 +94,9 @@ export default function TurfSettingsTab() {
     value: any
   ) => {
     const originalValue = (turfSettingsForm as any)[category][key];
-    if (typeof originalValue === "number") {
+    
+    // Auto-convert number fields
+    if (typeof originalValue === "number" || key === 'advanceAmount' || key === 'refundPercentage' || key === 'maxBookingHours' || key === 'minBookingHours' || key === 'advanceBookingDays' || key === 'cancellationDeadlineHours' || key === 'reminderBeforeHours') {
       value = parseInt(value, 10);
       if (isNaN(value)) value = 0;
     }
@@ -187,12 +189,12 @@ export default function TurfSettingsTab() {
             {/* <BookingRulesCard
               settings={turfSettingsForm}
               onFormChange={handleTurfFormChange}
-            />
+            /> */}
             <PaymentSettingsCard
               settings={turfSettingsForm}
               onFormChange={handleTurfFormChange}
             />
-            <TurfNotificationsCard
+            {/* <TurfNotificationsCard
               settings={turfSettingsForm}
               onFormChange={handleTurfFormChange}
             /> */}
