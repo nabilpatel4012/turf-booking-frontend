@@ -60,8 +60,39 @@ export function ImageUpload({
 
     try {
       setIsUploading(true);
-      const formData = new FormData();
       
+      // CASE 1: Custom Endpoint with Multiple Files -> Parallel Uploads
+      // We do this because custom endpoints (like /venues/:id/upload) typically don't support bulk upload
+      if (endpoint !== "/upload" && multiple && files.length > 1) {
+          const uploadPromises = Array.from(files).map(async (file) => {
+              const formData = new FormData();
+              formData.append("file", file);
+              Object.entries(additionalData).forEach(([k, v]) => formData.append(k, v));
+              
+              const finalUrl = getApiUrl(endpoint.startsWith("/") ? endpoint : `/${endpoint}`);
+              const res = await fetchWithAuth(finalUrl, {
+                  method: "POST",
+                  body: formData,
+              });
+              
+              if (!res.ok) throw new Error(`Upload failed for file ${file.name}`);
+              return res.json();
+          });
+          
+          const results = await Promise.all(uploadPromises);
+          const newUrls = results.map(r => r.url);
+          
+          onChange([...value, ...newUrls]);
+          
+          toast({
+            title: "Success",
+            description: "Images uploaded successfully",
+          });
+          return;
+      }
+
+      // CASE 2: Single file OR Generic Bulk Upload
+      const formData = new FormData();
       let uploadEndpoint = endpoint;
       
       // Append additional data
@@ -70,6 +101,7 @@ export function ImageUpload({
       });
 
       if (multiple && files.length > 1) {
+          // Must be the generic endpoint case here due to check above
           Array.from(files).forEach((file) => {
               formData.append("files", file);
           });
@@ -91,10 +123,6 @@ export function ImageUpload({
         },
         body: formData,
       });
-      // Workaround for Content-Type issue with FormData and pre-set headers
-      // Usually fetch handles this, but if getAuthHeaders includes Content-Type: application/json, it breaks.
-      // We assume getAuthHeaders might need adjustment or we manually handle it.
-      // Checking getAuthHeaders implementation might be needed. For now assuming standard behavior.
 
       if (!response.ok) {
           throw new Error("Upload failed");
