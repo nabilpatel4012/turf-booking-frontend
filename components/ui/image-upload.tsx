@@ -16,6 +16,7 @@ interface ImageUploadProps {
   maxFiles?: number;
   multiple?: boolean;
   endpoint?: string;
+  additionalData?: Record<string, any>;
 }
 
 export function ImageUpload({
@@ -27,6 +28,7 @@ export function ImageUpload({
   maxFiles = 5,
   multiple = false,
   endpoint = "/upload",
+  additionalData = {},
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
@@ -61,6 +63,11 @@ export function ImageUpload({
       const formData = new FormData();
       
       let uploadEndpoint = endpoint;
+      
+      // Append additional data
+      Object.entries(additionalData).forEach(([key, value]) => {
+          formData.append(key, value);
+      });
 
       if (multiple && files.length > 1) {
           Array.from(files).forEach((file) => {
@@ -69,7 +76,8 @@ export function ImageUpload({
           uploadEndpoint = "/upload-multiple";
       } else {
            formData.append("file", files[0]);
-           if (multiple) uploadEndpoint = "/upload"; // Single file but adding to list
+           // Keep generic endpoint if multiple=true but uploading single (rare case in this logic but possible)
+           if (multiple && endpoint === "/upload") uploadEndpoint = "/upload"; 
       }
       
       // FIX: Ensure endpoint matches backend route
@@ -79,7 +87,7 @@ export function ImageUpload({
         method: "POST",
         headers: {
              ...getAuthHeaders(),
-             "Content-Type": "", // Unset Content-Type to let browser set it with boundary
+             // Content-Type is handled automatically by fetchWithAuth for FormData
         },
         body: formData,
       });

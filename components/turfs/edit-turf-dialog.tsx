@@ -283,6 +283,8 @@ export function EditTurfDialog({
                     maxFiles={1}
                     multiple={false}
                     disabled={isLoading}
+                    endpoint={`/venues/${turf?.id}/upload`}
+                    additionalData={{ isLogo: "true" }}
                 />
             </div>
 
@@ -295,6 +297,8 @@ export function EditTurfDialog({
                     multiple={true}
                     maxFiles={10}
                     disabled={isLoading}
+                    endpoint={`/venues/${turf?.id}/upload`}
+                    additionalData={{ isLogo: "false" }}
                 />
             </div>
           </div>

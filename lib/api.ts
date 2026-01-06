@@ -20,10 +20,18 @@ export async function fetchWithAuth(
     ...options,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
       ...options.headers,
     },
   };
+
+  // Only set Content-Type to application/json if body is NOT FormData
+  // and Content-Type is not already set in options.headers
+  if (
+    !(options.body instanceof FormData) &&
+    !(options.headers as any)?.["Content-Type"]
+  ) {
+    (fetchOptions.headers as any)["Content-Type"] = "application/json";
+  }
 
   let response = await fetch(url, fetchOptions);
 
