@@ -23,9 +23,9 @@ import { getApiUrl, fetchWithAuth } from "@/lib/api";
 import TurfSelector from "./turf/turf-selector";
 import BookingStatusCard from "./turf/booking-status-card";
 import GeneralSettingsCard from "./turf/general-settings-card";
-// import BookingRulesCard from "./turf/BookingRulesCard";
+import BookingRulesCard from "./turf/booking-rules-card";
 import PaymentSettingsCard from "./turf/payment-settings-card";
-// import TurfNotificationsCard from "./turf/TurfNotificationsCard";
+import TurfNotificationsCard from "./turf/turf-notifications-card";
 import type { Turf, TurfSettings } from "@/types/settings";
 
 export default function TurfSettingsTab() {
@@ -186,18 +186,18 @@ export default function TurfSettingsTab() {
               onFormChange={handleTurfFormChange}
               onAutosave={handleTurfAutosave}
             />
-            {/* <BookingRulesCard
+            <BookingRulesCard
               settings={turfSettingsForm}
               onFormChange={handleTurfFormChange}
-            /> */}
+            />
             <PaymentSettingsCard
               settings={turfSettingsForm}
               onFormChange={handleTurfFormChange}
             />
-            {/* <TurfNotificationsCard
+            <TurfNotificationsCard
               settings={turfSettingsForm}
               onFormChange={handleTurfFormChange}
-            /> */}
+            />
           </div>
 
           <div className="flex justify-end mt-6">

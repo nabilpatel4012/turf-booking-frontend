@@ -59,6 +59,7 @@ import { getApiUrl, fetchWithAuth } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDistanceToNow } from "date-fns";
 import { Toaster, toast } from "sonner";
+import TurfSettingsTab from "@/components/settings/turf-settings-tab";
 
 // --- TYPE DEFINITIONS ---
 interface Session {
@@ -71,40 +72,7 @@ interface Session {
   isCurrent: boolean;
 }
 
-interface Turf {
-  id: string;
-  name: string;
-}
 
-interface TurfSettings {
-  booking: {
-    enabled: boolean;
-    disabledReason: string | null | undefined;
-    autoConfirm: boolean;
-    maxHours: number;
-    minHours: number;
-    advanceDays: number;
-    cancellationDeadline: number;
-    bufferTime: number;
-  };
-  notifications: {
-    onNewBooking: boolean;
-    onCancellation: boolean;
-    onPayment: boolean;
-    reminderBefore: number;
-  };
-  payment: {
-    requireAdvance: boolean;
-    advancePercentage: number;
-    refundEnabled: boolean;
-    refundPercentage: number;
-  };
-  general: {
-    timezone: string;
-    maintenanceMode: boolean;
-    maintenanceMessage: string | null;
-  };
-}
 
 interface OwnerSettings {
   profile: {
@@ -148,13 +116,8 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("turf");
 
   // Data states
+  // Data states
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [turfs, setTurfs] = useState<Turf[]>([]);
-  const [selectedTurfId, setSelectedTurfId] = useState<string>("");
-  const [turfSettings, setTurfSettings] = useState<TurfSettings | null>(null);
-  const [turfSettingsForm, setTurfSettingsForm] = useState<TurfSettings | null>(
-    null
-  );
 
   const [ownerSettings, setOwnerSettings] = useState<OwnerSettings | null>(
     null
@@ -166,8 +129,6 @@ export default function SettingsPage() {
   // Loading states
   const [isLoading, setIsLoading] = useState({
     sessions: true,
-    turfs: true,
-    turfSettings: false,
     ownerSettings: true,
     action: null as string | null, // For session revocation, etc.
   });
@@ -196,15 +157,10 @@ export default function SettingsPage() {
   // --- DATA FETCHING ---
   useEffect(() => {
     fetchSessions();
-    fetchTurfs();
     fetchOwnerSettings();
   }, []);
 
-  useEffect(() => {
-    if (selectedTurfId) {
-      fetchTurfSettings(selectedTurfId);
-    }
-  }, [selectedTurfId]);
+
 
   const setLoading = (key: keyof typeof isLoading, value: any) => {
     setIsLoading((prev) => ({ ...prev, [key]: value }));
@@ -224,43 +180,7 @@ export default function SettingsPage() {
     }
   };
 
-  const fetchTurfs = async () => {
-    setLoading("turfs", true);
-    try {
-      const res = await fetchWithAuth(getApiUrl("/turfs/admin/my-turfs"));
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to fetch turfs");
-      setTurfs(data.data);
-      if (data.data.length > 0 && !selectedTurfId) {
-        setSelectedTurfId(data.data[0].id);
-      }
-    } catch (error: any) {
-      toast.error("Could not load turfs", { description: error.message });
-    } finally {
-      setLoading("turfs", false);
-    }
-  };
 
-  const fetchTurfSettings = async (turfId: string) => {
-    setLoading("turfSettings", true);
-    try {
-      const res = await fetchWithAuth(
-        getApiUrl(`/settings/turf?turfId=${turfId}`)
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to fetch settings");
-      setTurfSettings(data.data);
-      setTurfSettingsForm(JSON.parse(JSON.stringify(data.data)));
-    } catch (error: any) {
-      toast.error("Could not load turf settings", {
-        description: error.message,
-      });
-      setTurfSettings(null);
-      setTurfSettingsForm(null);
-    } finally {
-      setLoading("turfSettings", false);
-    }
-  };
 
   const fetchOwnerSettings = async () => {
     setLoading("ownerSettings", true);
@@ -306,77 +226,7 @@ export default function SettingsPage() {
   };
 
   // --- API ACTIONS ---
-  const handleTurfFormChange = (
-    category: keyof TurfSettings,
-    key: string,
-    value: any
-  ) => {
-    const originalValue = (turfSettingsForm as any)[category][key];
-    if (typeof originalValue === "number") {
-      value = parseInt(value, 10);
-      if (isNaN(value)) value = 0;
-    }
 
-    setTurfSettingsForm((prev: TurfSettings | null) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        [category]: {
-          ...prev[category],
-          [key]: value,
-        },
-      };
-    });
-  };
-
-  const handleTurfAutosave = async (
-    endpoint: string,
-    payload: object,
-    optimisticUpdate: () => void
-  ) => {
-    optimisticUpdate();
-
-    const toastId = toast.loading("Updating...");
-    try {
-      const res = await fetchWithAuth(getApiUrl(endpoint), {
-        method: "PUT",
-        body: JSON.stringify({ turfId: selectedTurfId, ...payload }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Update failed");
-      toast.success(data.message || "Setting updated", { id: toastId });
-      await fetchTurfSettings(selectedTurfId);
-    } catch (error: any) {
-      toast.error("Update failed", { id: toastId, description: error.message });
-      await fetchTurfSettings(selectedTurfId);
-    }
-  };
-
-  const handleSaveTurfSettings = async () => {
-    if (!turfSettingsForm || !selectedTurfId) return;
-
-    const toastId = toast.loading("Saving settings...");
-    setLoading("turfSettings", true);
-    try {
-      const res = await fetchWithAuth(getApiUrl("/settings/turf/update"), {
-        method: "PUT",
-        body: JSON.stringify({
-          turfId: selectedTurfId,
-          settings: turfSettingsForm,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Update failed");
-      toast.success("Settings saved successfully!", {
-        id: toastId,
-      });
-      await fetchTurfSettings(selectedTurfId);
-    } catch (error: any) {
-      toast.error("Save failed", { id: toastId, description: error.message });
-    } finally {
-      setLoading("turfSettings", false);
-    }
-  };
 
   const revokeSession = async (sessionId: string) => {
     setLoading("action", sessionId);
@@ -602,328 +452,12 @@ export default function SettingsPage() {
 
           {/* === TAB 1: TURF CONFIGURATION === */}
           <TabsContent value="turf" className="space-y-6">
-            {/* Turf Selection - Always visible */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Select Context</CardTitle>
-                <CardDescription>
-                  Choose which turf's settings you are editing.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Select
-                  value={selectedTurfId}
-                  onValueChange={setSelectedTurfId}
-                  disabled={isLoading.turfs}
-                >
-                  <SelectTrigger className="w-full sm:w-[320px]">
-                    <SelectValue placeholder="Select a turf..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {turfs.map((turf) => (
-                      <SelectItem key={turf.id} value={turf.id}>
-                        {turf.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
-
-            {isLoading.turfSettings && !turfSettingsForm ? (
-              <div className="flex items-center justify-center p-12 text-muted-foreground">
-                <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                Loading configuration...
-              </div>
-            ) : turfSettingsForm && selectedTurfId ? (
-              <div className="grid gap-6 md:grid-cols-2">
-                {/* Column 1: Core Operations */}
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Core Operations</CardTitle>
-                      <CardDescription>
-                        Control availability and basic parameters.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      {/* Booking Status Toggle */}
-                      <div className="flex flex-col space-y-4 rounded-lg border p-4">
-                        <div className="flex items-center justify-between">
-                          <Label
-                            htmlFor="booking-enabled"
-                            className="font-medium"
-                          >
-                            Accepting Bookings
-                          </Label>
-                          <Switch
-                            id="booking-enabled"
-                            checked={turfSettingsForm.booking.enabled}
-                            onCheckedChange={(enabled) =>
-                              handleTurfAutosave(
-                                "/settings/turf/toggle-booking",
-                                { enabled },
-                                () =>
-                                  handleTurfFormChange(
-                                    "booking",
-                                    "enabled",
-                                    enabled
-                                  )
-                              )
-                            }
-                          />
-                        </div>
-                        {!turfSettingsForm.booking.enabled && (
-                          <div className="animate-in fade-in slide-in-from-top-2">
-                            <Input
-                              placeholder="Reason for closure (optional)"
-                              value={
-                                turfSettingsForm.booking.disabledReason || ""
-                              }
-                              onChange={(e) =>
-                                handleTurfFormChange(
-                                  "booking",
-                                  "disabledReason",
-                                  e.target.value
-                                )
-                              }
-                              onBlur={(e) =>
-                                handleTurfAutosave(
-                                  "/settings/turf/toggle-booking",
-                                  {
-                                    enabled: false,
-                                    reason: e.target.value,
-                                  },
-                                  () => {}
-                                )
-                              }
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Maintenance Toggle */}
-                      <div className="flex flex-col space-y-4 rounded-lg border p-4">
-                        <div className="flex items-center justify-between">
-                          <Label
-                            htmlFor="maintenance-mode"
-                            className="font-medium"
-                          >
-                            Maintenance Mode
-                          </Label>
-                          <Switch
-                            id="maintenance-mode"
-                            checked={turfSettingsForm.general.maintenanceMode}
-                            onCheckedChange={(enabled) =>
-                              handleTurfAutosave(
-                                "/settings/turf/toggle-maintenance",
-                                { enabled },
-                                () =>
-                                  handleTurfFormChange(
-                                    "general",
-                                    "maintenanceMode",
-                                    enabled
-                                  )
-                              )
-                            }
-                          />
-                        </div>
-                        {turfSettingsForm.general.maintenanceMode && (
-                          <div className="animate-in fade-in slide-in-from-top-2">
-                            <Textarea
-                              className="resize-none"
-                              placeholder="Maintenance message (optional)"
-                              value={
-                                turfSettingsForm.general.maintenanceMessage ||
-                                ""
-                              }
-                              onChange={(e) =>
-                                handleTurfFormChange(
-                                  "general",
-                                  "maintenanceMessage",
-                                  e.target.value
-                                )
-                              }
-                              onBlur={(e) =>
-                                handleTurfAutosave(
-                                  "/settings/turf/toggle-maintenance",
-                                  {
-                                    enabled: true,
-                                    message: e.target.value,
-                                  },
-                                  () => {}
-                                )
-                              }
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="timezone">Timezone</Label>
-                        <Input
-                          id="timezone"
-                          value={turfSettingsForm.general.timezone}
-                          onChange={(e) =>
-                            handleTurfFormChange(
-                              "general",
-                              "timezone",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Column 2: Rules & Payments */}
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Rules & Payment</CardTitle>
-                      <CardDescription>
-                        Define how bookings and payments are handled.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {/* Auto Confirm */}
-                        <div className="flex items-center justify-between">
-                            <Label htmlFor="auto-confirm">Auto-confirm Bookings</Label>
-                            <Switch
-                                id="auto-confirm"
-                                checked={turfSettingsForm.booking.autoConfirm}
-                                onCheckedChange={(c) =>
-                                    handleTurfFormChange("booking", "autoConfirm", c)
-                                }
-                            />
-                        </div>
-
-                      {/* Numeric Inputs Grid */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">
-                            Min Hours
-                          </Label>
-                          <Input
-                            type="number"
-                            value={turfSettingsForm.booking.minHours}
-                            onChange={(e) =>
-                              handleTurfFormChange(
-                                "booking",
-                                "minHours",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">
-                            Max Hours
-                          </Label>
-                          <Input
-                            type="number"
-                            value={turfSettingsForm.booking.maxHours}
-                            onChange={(e) =>
-                              handleTurfFormChange(
-                                "booking",
-                                "maxHours",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">
-                            Advance (Days)
-                          </Label>
-                          <Input
-                            type="number"
-                            value={turfSettingsForm.booking.advanceDays}
-                            onChange={(e) =>
-                              handleTurfFormChange(
-                                "booking",
-                                "advanceDays",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">
-                            Cancel Deadline (Hrs)
-                          </Label>
-                          <Input
-                            type="number"
-                            value={turfSettingsForm.booking.cancellationDeadline}
-                            onChange={(e) =>
-                              handleTurfFormChange(
-                                "booking",
-                                "cancellationDeadline",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      {/* Payment */}
-                      <div className="space-y-4">
-                         <div className="flex items-center justify-between">
-                            <Label htmlFor="req-adv">Require Advance</Label>
-                            <Switch
-                                id="req-adv"
-                                checked={turfSettingsForm.payment.requireAdvance}
-                                onCheckedChange={(c) => handleTurfFormChange("payment", "requireAdvance", c)}
-                            />
-                         </div>
-                         {turfSettingsForm.payment.requireAdvance && (
-                             <div className="flex items-center gap-2">
-                                 <Input 
-                                    type="number" 
-                                    className="w-20"
-                                    value={turfSettingsForm.payment.advancePercentage}
-                                    onChange={(e) => handleTurfFormChange("payment", "advancePercentage", e.target.value)}
-                                />
-                                <span className="text-sm">% of total</span>
-                             </div>
-                         )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                    <Button 
-                        onClick={handleSaveTurfSettings} 
-                        disabled={isLoading.turfSettings}
-                        className="w-full"
-                    >
-                        {isLoading.turfSettings ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Sparkles className="mr-2 h-4 w-4" />
-                        )}
-                        Save Configuration
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              !isLoading.turfs && (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>No Turf Found</AlertTitle>
-                  <AlertDescription>
-                    Please ensure you have at least one turf created.
-                  </AlertDescription>
-                </Alert>
-              )
-            )}
+            <TurfSettingsTab />
           </TabsContent>
 
           {/* === TAB 2: NOTIFICATIONS === */}
           <TabsContent value="notifications" className="space-y-6">
-            {isLoading.ownerSettings || !notificationPrefs || !turfSettingsForm ? (
+            {isLoading.ownerSettings || !notificationPrefs ? (
                 <div className="flex items-center justify-center p-12 text-muted-foreground">
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
                 Loading notification preferences...
@@ -987,52 +521,14 @@ export default function SettingsPage() {
                         </CardContent>
                      </Card>
 
-                    {/* Customer Alerts (Turf Level) */}
-                    <Card className="md:col-span-2 border-primary/20 bg-primary/5">
-                        <CardHeader>
-                            <CardTitle>Customer Alerts (Turf: {turfs.find(t => t.id === selectedTurfId)?.name})</CardTitle>
-                            <CardDescription>
-                                These settings are specific to the selected turf.
-                            </CardDescription>
-                        </CardHeader>
-                         <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="cust-new-booking">Notify Customer on Booking</Label>
-                                <Switch 
-                                    id="cust-new-booking"
-                                    checked={turfSettingsForm.notifications.onNewBooking}
-                                    onCheckedChange={(c) => handleTurfFormChange("notifications", "onNewBooking", c)}
-                                />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="cust-cancellation">Notify Customer on Cancellation</Label>
-                                <Switch 
-                                    id="cust-cancellation"
-                                    checked={turfSettingsForm.notifications.onCancellation}
-                                    onCheckedChange={(c) => handleTurfFormChange("notifications", "onCancellation", c)}
-                                />
-                            </div>
-                            <div className="flex items-center justify-between gap-4">
-                                <Label htmlFor="cust-reminder" className="whitespace-nowrap">Reminder Hours Before</Label>
-                                <Input 
-                                    id="cust-reminder"
-                                    type="number"
-                                    className="w-24"
-                                    value={turfSettingsForm.notifications.reminderBefore}
-                                    onChange={(e) => handleTurfFormChange("notifications", "reminderBefore", e.target.value)}
-                                />
-                            </div>
-                         </CardContent>
-                         {/* We need a save button specifically for these merged settings */}
-                    </Card>
+
 
                     <div className="md:col-span-2 flex justify-end gap-2">
                         <Button onClick={() => {
                             handleUpdateNotifications(); // Save admin prefs
-                            handleSaveTurfSettings(); // Save turf prefs
                         }}>
                             <Sparkles className="mr-2 h-4 w-4" />
-                            Save All Notification Preferences
+                            Save Notification Preferences
                         </Button>
                     </div>
                 </div>
