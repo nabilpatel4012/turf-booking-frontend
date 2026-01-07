@@ -15,6 +15,7 @@ import {
   Shield,
   DollarSign,
   QrCode,
+  LineChart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useTransition } from "react";
@@ -26,6 +27,7 @@ const navigation = [
   { name: "Announcements", href: "/announcements", icon: Megaphone },
   { name: "Pricing", href: "/pricing", icon: DollarSign },
   { name: "Tournaments", href: "/tournaments", icon: Trophy, disabled: true },
+  { name: "Analytics", href: "/analytics", icon: LineChart },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "Sessions", href: "/sessions", icon: Shield },
   { name: "Scanner", href: "/scanner", icon: QrCode },
