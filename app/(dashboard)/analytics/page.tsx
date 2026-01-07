@@ -67,23 +67,30 @@ export default function AnalyticsPage() {
       </div>
       
       <KPICards data={kpis} loading={loading} />
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <div className="col-span-4 lg:col-span-4">
-             <RevenueChart dailyData={dailyRevenue} monthlyData={monthlyRevenue} />
+      {/* Main Charts Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 h-[400px]">
+        {/* Revenue Chart */}
+        <div className="col-span-4 lg:col-span-4 h-full">
+            <RevenueChart dailyData={dailyRevenue} monthlyData={monthlyRevenue} />
         </div>
-        <div className="col-span-4 lg:col-span-3">
+
+        {/* Top Turfs */}
+        <div className="col-span-4 lg:col-span-3 h-full">
              <TopTurfsChart data={topTurfs} />
         </div>
       </div>
 
-       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <div className="col-span-4 lg:col-span-4">
-             <PeakHoursChart data={peakHours} />
-        </div>
-        <div className="col-span-4 lg:col-span-3">
-             <CustomerSegmentsChart data={segments} />
-        </div>
+      {/* Secondary Charts Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 h-[400px]">
+        {/* Customer Segments */}
+         <div className="col-span-4 lg:col-span-3 h-full">
+            <CustomerSegmentsChart data={segments} />
+         </div>
+
+         {/* Peak Hours */}
+         <div className="col-span-4 lg:col-span-4 h-full">
+            <PeakHoursChart data={peakHours} />
+         </div>
       </div>
     </div>
   );

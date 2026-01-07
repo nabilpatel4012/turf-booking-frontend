@@ -12,24 +12,34 @@ interface RevenueChartProps {
 
 export function RevenueChart({ dailyData, monthlyData }: RevenueChartProps) {
   
+  const formattedDaily = dailyData?.map(d => ({
+      ...d,
+      revenue: parseFloat(d.revenue) || 0
+  }));
+
+  const formattedMonthly = monthlyData?.map(m => ({
+      ...m,
+      revenue: parseFloat(m.revenue) || 0
+  }));
+
   return (
-    <Card className="col-span-4">
-      <CardHeader>
-        <CardTitle>Revenue Overview</CardTitle>
-         <CardDescription>
-            Comparing revenue trends over time.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pl-2">
-        <Tabs defaultValue="daily" className="space-y-4">
+      <div className="col-span-1 rounded-xl border bg-card text-card-foreground shadow-sm h-full flex flex-col p-6">
+        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+                <h3 className="font-semibold leading-none tracking-tight">Revenue Overview</h3>
+                <p className="text-sm text-muted-foreground">Comparing revenue trends over time.</p>
+            </div>
+        </div>
+        <div className="flex-1 pt-4 min-h-[350px]">
+            <Tabs defaultValue="daily" className="space-y-4 h-full flex flex-col">
              <TabsList>
                 <TabsTrigger value="daily">Daily</TabsTrigger>
                 <TabsTrigger value="monthly">Monthly</TabsTrigger>
               </TabsList>
 
-             <TabsContent value="daily" className="h-[350px]">
+             <TabsContent value="daily" className="flex-1 h-full min-h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dailyData}>
+                  <LineChart data={formattedDaily}>
                     <XAxis
                         dataKey="booking_date"
                         stroke="#888888"
@@ -59,7 +69,7 @@ export function RevenueChart({ dailyData, monthlyData }: RevenueChartProps) {
                                                 Date
                                             </span>
                                             <span className="font-bold text-muted-foreground">
-                                                {label}
+                                                {new Date(label as string | number).toLocaleDateString()}
                                             </span>
                                         </div>
                                         <div className="flex flex-col">
@@ -84,14 +94,15 @@ export function RevenueChart({ dailyData, monthlyData }: RevenueChartProps) {
                         stroke="hsl(var(--primary))"
                         strokeWidth={2}
                         dot={false}
+                        activeDot={{ r: 6 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
              </TabsContent>
 
-             <TabsContent value="monthly" className="h-[350px]">
+             <TabsContent value="monthly" className="flex-1 h-full min-h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyData}>
+                  <LineChart data={formattedMonthly}>
                      <XAxis
                         dataKey="month"
                         stroke="#888888"
@@ -146,12 +157,13 @@ export function RevenueChart({ dailyData, monthlyData }: RevenueChartProps) {
                         stroke="hsl(var(--primary))"
                         strokeWidth={2}
                         dot={false}
+                        activeDot={{ r: 6 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
              </TabsContent>
         </Tabs>
-      </CardContent>
-    </Card>
+        </div>
+      </div>
   );
 }

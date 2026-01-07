@@ -1,52 +1,53 @@
 export interface DailyRevenue {
   booking_date: string;
-  total_bookings: number;
-  completed_bookings: number;
-  cancelled_bookings: number;
-  revenue: number;
-  avg_booking_value: number;
-  cancellation_rate: number;
-  revenue_7d_ma: number;
+  total_bookings: string;
+  completed_bookings: string;
+  cancelled_bookings: string;
+  revenue: string;
+  avg_booking_value: string | null;
+  cancellation_rate: string;
+  revenue_7d_ma: string;
 }
 
 export interface MonthlyRevenue {
   month: string;
-  bookings: number;
-  revenue: number;
-  unique_customers: number;
-  unique_turfs: number;
-  avg_revenue_per_booking: number;
-  revenue_growth_pct: number;
-  booking_growth_pct: number;
+  bookings: string;
+  revenue: string;
+  unique_customers: string;
+  unique_turfs: string;
+  avg_revenue_per_booking: string;
+  revenue_growth_pct: string | null;
+  booking_growth_pct: string | null;
 }
 
 export interface TurfPerformance {
   turf_name: string;
-  total_bookings: number;
-  completed_bookings: number;
-  revenue: number;
-  avg_booking_value: number;
-  avg_rating: number;
-  review_count: number;
-  occupied_slots: number;
-  utilization_rate_pct: number;
-  revenue_rank: number;
+  total_bookings: string;
+  completed_bookings: string;
+  revenue: string;
+  avg_booking_value: string;
+  avg_rating: string | null;
+  review_count: string;
+  occupied_slots: string;
+  utilization_rate_pct: string;
+  revenue_rank: string;
 }
 
 export interface PeakHour {
-  hour_of_day: number;
-  day_of_week: number;
+  hour_of_day: string | number;
+  day_of_week: string | number;
   day_name: string;
-  booking_count: number;
-  revenue: number;
-  avg_value: number;
+  booking_count: string;
+  revenue: string;
+  avg_value: string | null;
 }
 
 export interface CustomerSegment {
   customer_segment: "Champions" | "Loyalists" | "Potential Loyalists" | "Hibernating" | "At Risk" | "Others";
-  user_count: number;
-  avg_ltv: number;
-  total_bookings: number;
+  user_count: string;
+  avg_ltv: string;
+  total_bookings: string;
+  avg_days_since_last_booking: string;
 }
 
 export interface BookingForecast {
@@ -57,10 +58,13 @@ export interface BookingForecast {
 }
 
 export interface KPIOverview {
-    totalRevenue: number;
-    totalBookings: number;
-    avgBookingValue: number;
-    utilizationRate: number;
-    activeTurfs: number;
-    totalCustomers: number;
+    revenue_l30d: string;
+    bookings_l30d: string;
+    bookings_prev_30d: string;
+    revenue_prev_30d: string | null;
+    active_customers_l30d: string;
+    active_customers_prev_30d: string;
+    completion_rate_l30d: string;
+    cancellation_rate_l30d: string;
+    avg_booking_value_l30d: string;
 }
