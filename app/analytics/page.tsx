@@ -28,10 +28,10 @@ export default function AnalyticsPage() {
         };
 
         const [daily, monthly, turfs, hours, segs, kpiData] = await Promise.all([
-            fetchJson('/analytics/revenue/daily?interval=90 days'),
+            fetchJson('/analytics/revenue/daily?interval=90'),
             fetchJson('/analytics/revenue/monthly'),
-            fetchJson('/analytics/turfs/top?interval=30 days'),
-            fetchJson('/analytics/peak-hours?interval=60 days'),
+            fetchJson('/analytics/turfs/top?interval=30'),
+            fetchJson('/analytics/peak-hours?interval=60'),
             fetchJson('/analytics/customers/segmentation'),
             fetchJson('/analytics/kpis')
         ]);
