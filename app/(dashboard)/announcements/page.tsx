@@ -9,6 +9,7 @@ import { EditAnnouncementDialog } from "@/components/announcements/edit-announce
 import { DeleteAnnouncementDialog } from "@/components/announcements/delete-announcement-dialog";
 import { Plus } from "lucide-react";
 import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
+import { Separator } from "@/components/ui/separator";
 
 interface Announcement {
   id: string;
@@ -69,11 +70,11 @@ export default function AnnouncementsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-slate-50/50 min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Announcements</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Manage announcements for your users
           </p>
         </div>
@@ -86,6 +87,7 @@ export default function AnnouncementsPage() {
           Create Announcement
         </Button>
       </div>
+      <Separator className="hidden sm:block" />
 
       {isLoading ? (
         <AnnouncementTableSkeleton />

@@ -10,6 +10,7 @@ import { DeleteTurfDialog } from "@/components/turfs/delete-turf-dialog";
 import { Plus, Loader2, AlertCircle } from "lucide-react";
 import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 
 interface Owner {
   id: string;
@@ -180,21 +181,24 @@ export default function TurfsPage() {
     );
   }
 
+
+
   // Success State
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-slate-50/50 min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Venues</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your sports facilities
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Venues</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+             Manage your sports facilities
           </p>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
+        <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Add Venue
         </Button>
       </div>
+      <Separator className="hidden sm:block" />
 
       {turfs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">

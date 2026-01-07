@@ -115,7 +115,7 @@ export default function BookingsPage() {
             Bookings
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Manage all turf bookings
+            Manage all bookings
           </p>
         </div>
         <Button

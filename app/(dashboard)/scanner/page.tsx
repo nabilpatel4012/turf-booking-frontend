@@ -30,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 
 interface VerificationResult {
   valid: boolean;
@@ -197,9 +198,14 @@ export default function ScannerPage() {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-md">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">QR Scanner</h1>
+    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-slate-50/50 min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">QR Scanner</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+             Scan user QR codes to verify bookings
+          </p>
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -214,6 +220,7 @@ export default function ScannerPage() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <Separator className="hidden sm:block" />
 
       <input
         type="file"

@@ -420,13 +420,16 @@ export default function SettingsPage() {
   return (
     <>
       <Toaster richColors position="top-right" />
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your turf, notifications, and security.
-          </p>
+      <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-slate-50/50 min-h-screen">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Settings</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Manage your turf, notifications, and security.
+            </p>
+          </div>
         </div>
+        <Separator className="hidden sm:block" />
 
         <Tabs
           value={activeTab}

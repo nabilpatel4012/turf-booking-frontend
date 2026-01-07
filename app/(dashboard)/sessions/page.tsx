@@ -24,6 +24,7 @@ import {
 import { getApiUrl, fetchWithAuth } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDistanceToNow } from "date-fns";
+import { Separator } from "@/components/ui/separator";
 
 interface Session {
   id: string;
@@ -159,13 +160,16 @@ export default function SessionsPage() {
   const otherSessions = sessions.filter((s) => !s.isCurrent);
 
   return (
-    <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Active Sessions</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your active sessions across all devices
-        </p>
+    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-slate-50/50 min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Active Sessions</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Manage your active sessions across all devices
+          </p>
+        </div>
       </div>
+      <Separator className="hidden sm:block" />
 
       <Alert>
         <CheckCircle2 className="h-4 w-4" />

@@ -8,6 +8,7 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { fetchWithAuth } from "@/lib/api";
+import { Separator } from "@/components/ui/separator";
 
 interface Turf {
   id: string;
@@ -63,22 +64,26 @@ export default function PricingPage() {
 
   if (selectedTurf) {
     return (
-      <div className="space-y-6 p-6">
-        <div className="flex flex-row items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSelectedTurf(null)}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Manage Pricing</h1>
-            <p className="text-sm text-muted-foreground">
-              Editing pricing for {selectedTurf.name}
-            </p>
+      <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-slate-50/50 min-h-screen">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
+             <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedTurf(null)}
+                className="shrink-0"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Manage Pricing</h1>
+                 <p className="text-xs sm:text-sm text-muted-foreground">
+                  Editing pricing for {selectedTurf.name}
+                </p>
+              </div>
           </div>
         </div>
+        <Separator className="hidden sm:block" />
 
         <PricingEditor turfId={selectedTurf.id} />
       </div>
@@ -86,13 +91,16 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Pricing Management</h1>
-        <p className="text-muted-foreground">
-          Select a turf to manage its pricing rules
-        </p>
+    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-slate-50/50 min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Pricing Management</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Select a turf to manage its pricing rules
+          </p>
+        </div>
       </div>
+      <Separator className="hidden sm:block" />
 
       {turfs.length === 0 ? (
         <div className="text-center py-12 border rounded-lg bg-muted/10">

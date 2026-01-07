@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 interface DashboardData {
   overview?: {
@@ -239,11 +240,13 @@ export default function DashboardPage() {
   } = bookingsByStatus;
 
   return (
-    <div className="p-2 md:p-3 lg:p-4 space-y-3 md:space-y-3">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
+    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-slate-50/50 min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground mt-1 text-sm md:text-base">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Dashboard
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Overview of your turf booking business
           </p>
         </div>
@@ -256,6 +259,7 @@ export default function DashboardPage() {
           })}
         </div>
       </div>
+      <Separator className="hidden sm:block" />
 
       <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
