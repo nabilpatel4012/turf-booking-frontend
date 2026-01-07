@@ -130,7 +130,9 @@ export function BookingTable({
   };
 
   const formatTime = (timeString: string) => {
-    return new Date(timeString).toLocaleTimeString("en-IN", {
+    // Strip 'Z' to treat the time as local wall time, fixing the +5:30 double conversion issue
+    const localTimeString = timeString.endsWith("Z") ? timeString.slice(0, -1) : timeString;
+    return new Date(localTimeString).toLocaleTimeString("en-IN", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,

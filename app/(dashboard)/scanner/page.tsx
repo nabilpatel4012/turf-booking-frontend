@@ -360,12 +360,12 @@ export default function ScannerPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Time:</span>
                     <span className="font-medium">
-                      {new Date(result.booking.startTime).toLocaleTimeString([], {
+                      {new Date(result.booking.startTime.replace("Z", "")).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}{" "}
                       -{" "}
-                      {new Date(result.booking.endTime).toLocaleTimeString([], {
+                      {new Date(result.booking.endTime.replace("Z", "")).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
