@@ -17,13 +17,14 @@ export interface Booking {
   date: string;
   startTime: string;
   endTime: string;
-  price: string;
+  totalAmount: number;
   status: "pending" | "confirmed" | "active" | "completed" | "cancelled";
   createdBy: string;
   cancelledAt: string | null;
   cancellationReason: string | null;
   paymentId: string | null;
   orderId: string | null;
+  paidAmount: number | null;
   createdAt: string;
   updatedAt: string;
   userName?: string;

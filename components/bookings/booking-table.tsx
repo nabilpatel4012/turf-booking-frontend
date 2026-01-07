@@ -211,7 +211,8 @@ export function BookingTable({
               <TableHead>User</TableHead>
               <TableHead>Schedule</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
+              <TableHead className="text-right">Paid</TableHead>
+              <TableHead className="text-right">Total</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -248,12 +249,15 @@ export function BookingTable({
                   </TableCell>
                   <TableCell>{getStatusBadge(booking.status)}</TableCell>
                   <TableCell className="text-right">
+                    <span className="font-medium text-green-600">
+                        ₹{Number.parseFloat(String(booking.paidAmount || 0)).toLocaleString("en-IN")}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
                     <div className="flex flex-col items-end gap-1">
                       <span className="font-medium">
                         ₹
-                        {Number.parseFloat(booking.price).toLocaleString(
-                          "en-IN"
-                        )}
+                        {booking.totalAmount.toLocaleString("en-IN")}
                       </span>
                       {getPaymentBadge(booking)}
                     </div>
@@ -357,9 +361,15 @@ export function BookingTable({
                   <p className="font-medium">{booking.userName || "Unknown"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Price</p>
+                  <p className="text-xs text-muted-foreground">Paid</p>
+                  <p className="font-medium text-green-600">
+                    ₹{Number.parseFloat(String(booking.paidAmount || 0)).toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Total</p>
                   <p className="font-medium">
-                    ₹{Number.parseFloat(booking.price).toLocaleString("en-IN")}
+                    ₹{booking.totalAmount.toLocaleString("en-IN")}
                   </p>
                 </div>
               </div>

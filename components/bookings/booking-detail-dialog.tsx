@@ -202,10 +202,17 @@ export function BookingDetailDialog({
                 </h4>
                 <div className="bg-muted/30 p-3 rounded-md space-y-2">
                   <div className="flex justify-between items-center">
+                    <span className="text-sm">Paid Amount</span>
+                    <span className="font-bold text-lg text-green-600">
+                      ₹
+                      {Number.parseFloat(String(booking.paidAmount || 0)).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
                     <span className="text-sm">Total Amount</span>
                     <span className="font-bold text-lg">
                       ₹
-                      {Number.parseFloat(booking.price).toLocaleString("en-IN")}
+                      {booking.totalAmount.toLocaleString("en-IN")}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
