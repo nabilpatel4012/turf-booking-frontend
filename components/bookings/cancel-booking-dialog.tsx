@@ -38,17 +38,18 @@ export function CancelBookingDialog({
     setError("");
 
     try {
-      // The API endpoint remains the same
+      // The correct endpoint is DELETE /bookings/:id
       const response = await fetchWithAuth(
-        getApiUrl(`/bookings/${booking.id}/cancel`),
+        getApiUrl(`/bookings/${booking.id}`),
         {
-          method: "POST",
+          method: "DELETE",
           headers: getAuthHeaders(),
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to cancel booking");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || "Failed to cancel booking");
       }
 
       onSuccess();

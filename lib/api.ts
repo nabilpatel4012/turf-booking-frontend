@@ -109,3 +109,15 @@ export async function del(path: string, options: RequestInit = {}) {
     method: "DELETE",
   });
 }
+
+/**
+ * Logout current admin user
+ * Clears session and cookies
+ */
+export async function logout(): Promise<boolean> {
+  const response = await fetchWithAuth(getApiUrl("/auth/admin/logout"), {
+    method: "POST",
+    credentials: "include",
+  });
+  return response.ok;
+}
