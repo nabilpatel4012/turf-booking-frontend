@@ -1,124 +1,361 @@
 "use client";
 
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, PieChart, Pie, Legend } from "recharts";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Legend, LabelList } from "recharts";
 import { TurfPerformance, CustomerSegment, PeakHour } from "@/types/analytics";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Trophy, Users, Clock } from "lucide-react";
+
+// ============================================
+// Top Turfs Horizontal Comparison Chart
+// ============================================
+
+const TURF_COLORS = [
+  "#6366F1", // Indigo
+  "#8B5CF6", // Violet
+  "#A855F7", // Purple
+  "#D946EF", // Fuchsia
+  "#EC4899", // Pink
+];
+
+interface TurfBarData {
+  turf_name: string;
+  revenue: number;
+  bookings: number;
+  utilization: number;
+  rank: number;
+}
 
 export function TopTurfsChart({ data }: { data?: TurfPerformance[] }) {
-    if (!data || data.length === 0) return (
-       <div className="col-span-1 min-h-[300px] flex items-center justify-center text-muted-foreground rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-         No data available for Top Turfs
-       </div>
+  if (!data || data.length === 0) {
+    return (
+      <Card className="h-full flex flex-col">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-amber-500" />
+            <CardTitle className="text-lg">Turf Performance</CardTitle>
+          </div>
+          <CardDescription>Compare revenue across your turfs</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <p className="text-muted-foreground text-sm">No turf data available</p>
+        </CardContent>
+      </Card>
     );
-  
-  const formattedData = data.slice(0, 5).map(t => ({
-      ...t,
-      revenue: parseFloat(t.revenue) || 0
+  }
+
+  // Format data for horizontal bar comparison
+  const formattedData: TurfBarData[] = data.slice(0, 5).map((t, index) => ({
+    turf_name: t.turf_name.length > 15 ? t.turf_name.substring(0, 15) + '...' : t.turf_name,
+    revenue: parseFloat(t.revenue) || 0,
+    bookings: parseInt(t.total_bookings) || 0,
+    utilization: parseFloat(t.utilization_rate_pct) || 0,
+    rank: index + 1
   }));
 
+  // Find max revenue for percentage calculation
+  const maxRevenue = Math.max(...formattedData.map(d => d.revenue));
+
   return (
-    <div className="col-span-1 rounded-xl border bg-card text-card-foreground shadow-sm p-6 h-full flex flex-col">
-      <div className="space-y-1 pb-4">
-        <h3 className="font-semibold leading-none tracking-tight">Top Performing Turfs</h3>
-         <p className="text-sm text-muted-foreground">By revenue generated.</p>
-      </div>
-      <div className="flex-1 min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={formattedData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <XAxis type="number" hide />
-                <YAxis dataKey="turf_name" type="category" width={100} tick={{fontSize: 12}} />
-                <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20} />
-            </BarChart>
-            </ResponsiveContainer>
-      </div>
-    </div>
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-amber-500" />
+            <CardTitle className="text-lg">Turf Performance</CardTitle>
+          </div>
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+            Top {formattedData.length}
+          </span>
+        </div>
+        <CardDescription>Revenue comparison across your turfs</CardDescription>
+      </CardHeader>
+      
+      <CardContent className="flex-1 pt-2">
+        <div className="space-y-4 h-full">
+          {formattedData.map((turf, index) => {
+            const percentage = maxRevenue > 0 ? (turf.revenue / maxRevenue) * 100 : 0;
+            const color = TURF_COLORS[index % TURF_COLORS.length];
+            
+            return (
+              <div key={turf.turf_name} className="space-y-2">
+                {/* Turf name and rank */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className="text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center text-white"
+                      style={{ backgroundColor: color }}
+                    >
+                      {turf.rank}
+                    </span>
+                    <span className="text-sm font-medium truncate max-w-[120px]" title={turf.turf_name}>
+                      {turf.turf_name}
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold">
+                    ₹{turf.revenue.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                
+                {/* Progress bar */}
+                <div className="relative h-6 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out flex items-center justify-end pr-2"
+                    style={{ 
+                      width: `${Math.max(percentage, 8)}%`,
+                      background: `linear-gradient(90deg, ${color}20, ${color})`
+                    }}
+                  >
+                    {percentage > 25 && (
+                      <span className="text-[10px] font-medium text-white">
+                        {turf.bookings} bookings
+                      </span>
+                    )}
+                  </div>
+                  {percentage <= 25 && (
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">
+                      {turf.bookings} bookings
+                    </span>
+                  )}
+                </div>
+
+                {/* Utilization rate */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Utilization: {turf.utilization.toFixed(1)}%</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
+// ============================================
+// Customer Segments Pie Chart
+// ============================================
+
+const SEGMENT_COLORS: Record<string, string> = {
+  "Champions": "#10B981",
+  "Loyalists": "#6366F1", 
+  "Potential Loyalists": "#8B5CF6",
+  "Hibernating": "#F59E0B",
+  "At Risk": "#EF4444",
+  "Others": "#94A3B8"
+};
 
 export function CustomerSegmentsChart({ data }: { data?: CustomerSegment[] }) {
-    if (!data || data.length === 0) return (
-        <div className="col-span-1 min-h-[300px] flex items-center justify-center text-muted-foreground rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-             No customer segmentation data
-        </div>
-    );
-
-    const formattedData = data.map(d => ({
-        ...d,
-        user_count: parseInt(d.user_count) || 0
-    }));
-
+  if (!data || data.length === 0) {
     return (
-        <div className="col-span-1 rounded-xl border bg-card text-card-foreground shadow-sm p-6 h-full flex flex-col">
-            <div className="space-y-1 pb-4">
-                <h3 className="font-semibold leading-none tracking-tight">Customer Segments</h3>
-                 <p className="text-sm text-muted-foreground">Distribution by RFM Analysis.</p>
-            </div>
-            <div className="flex-1 min-h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={formattedData}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                // @ts-ignore
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                outerRadius={80}
-                                fill="#8884d8"
-                                dataKey="user_count"
-                                nameKey="customer_segment"
-                            >
-                                {formattedData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
-             </div>
+      <Card className="h-full flex flex-col">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-indigo-500" />
+            <CardTitle className="text-lg">Customer Segments</CardTitle>
+          </div>
+          <CardDescription>RFM-based customer distribution</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <p className="text-muted-foreground text-sm">No segmentation data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const formattedData = data.map(d => ({
+    segment: d.customer_segment,
+    count: parseInt(d.user_count) || 0,
+    avgLtv: parseFloat(d.avg_ltv) || 0,
+    avgDays: parseFloat(d.avg_days_since_last_booking) || 0,
+    color: SEGMENT_COLORS[d.customer_segment] || SEGMENT_COLORS["Others"]
+  }));
+
+  const totalCustomers = formattedData.reduce((sum, d) => sum + d.count, 0);
+  const maxCount = Math.max(...formattedData.map(d => d.count));
+
+  return (
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-indigo-500" />
+            <CardTitle className="text-lg">Customer Segments</CardTitle>
+          </div>
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+            {totalCustomers} total
+          </span>
         </div>
-    )
+        <CardDescription>RFM analysis distribution</CardDescription>
+      </CardHeader>
+      
+      <CardContent className="flex-1 pt-2">
+        <div className="space-y-3 h-full">
+          {formattedData.map((segment) => {
+            const percentage = totalCustomers > 0 ? (segment.count / totalCustomers) * 100 : 0;
+            const barWidth = maxCount > 0 ? (segment.count / maxCount) * 100 : 0;
+            
+            return (
+              <div key={segment.segment} className="space-y-1.5">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: segment.color }}
+                    />
+                    <span className="font-medium">{segment.segment}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="text-muted-foreground">
+                      LTV: ₹{segment.avgLtv.toLocaleString('en-IN')}
+                    </span>
+                    <span className="font-bold">{segment.count}</span>
+                  </div>
+                </div>
+                
+                <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                    style={{ 
+                      width: `${barWidth}%`,
+                      backgroundColor: segment.color
+                    }}
+                  />
+                </div>
+                
+                <div className="text-[10px] text-muted-foreground">
+                  {percentage.toFixed(1)}% of customers • Last booking: {segment.avgDays.toFixed(0)} days ago
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
+// ============================================
+// Peak Hours Bar Chart
+// ============================================
+
 export function PeakHoursChart({ data }: { data?: PeakHour[] }) {
-    if (!data || data.length === 0) return (
-         <div className="col-span-1 min-h-[300px] flex items-center justify-center text-muted-foreground rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-             No peak hours data
-        </div>
-    );
-    
-    // Aggregate by hour for simplicity in this view
-    const hourlyData = data.reduce((acc, curr) => {
-        const hour = Number(curr.hour_of_day);
-        const existing = acc.find(item => item.hour_of_day === hour);
-        if (existing) {
-            existing.booking_count += Number(curr.booking_count);
-        } else {
-            acc.push({ hour_of_day: hour, booking_count: Number(curr.booking_count) });
-        }
-        return acc;
-    }, [] as {hour_of_day: number, booking_count: number}[]).sort((a,b) => a.hour_of_day - b.hour_of_day);
-
+  if (!data || data.length === 0) {
     return (
-        <div className="col-span-1 rounded-xl border bg-card text-card-foreground shadow-sm p-6 h-full flex flex-col">
-            <div className="space-y-1 pb-4">
-                <h3 className="font-semibold leading-none tracking-tight">Peak Booking Hours</h3>
-                <p className="text-sm text-muted-foreground">Total bookings by hour of day.</p>
-            </div>
-            <div className="flex-1 min-h-[250px]">
-                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={hourlyData}>
-                        <XAxis dataKey="hour_of_day" tickFormatter={(val) => `${val}:00`}/>
-                        <YAxis />
-                        <Tooltip cursor={{fill: 'transparent'}} contentStyle={{  borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                        <Bar dataKey="booking_count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                 </ResponsiveContainer>
-            </div>
-        </div>
-    )
+      <Card className="h-full flex flex-col">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-cyan-500" />
+            <CardTitle className="text-lg">Peak Hours</CardTitle>
+          </div>
+          <CardDescription>Booking distribution by time</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <p className="text-muted-foreground text-sm">No peak hours data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
+  // Aggregate by hour
+  const hourlyData = data.reduce((acc, curr) => {
+    const hour = Number(curr.hour_of_day);
+    const existing = acc.find(item => item.hour === hour);
+    if (existing) {
+      existing.bookings += Number(curr.booking_count);
+      existing.revenue += parseFloat(curr.revenue as string) || 0;
+    } else {
+      acc.push({ 
+        hour, 
+        bookings: Number(curr.booking_count),
+        revenue: parseFloat(curr.revenue as string) || 0
+      });
+    }
+    return acc;
+  }, [] as { hour: number; bookings: number; revenue: number }[])
+    .sort((a, b) => a.hour - b.hour);
+
+  // Find peak hour
+  const peakHour = hourlyData.reduce((max, curr) => 
+    curr.bookings > max.bookings ? curr : max, hourlyData[0]);
+  
+  const maxBookings = peakHour?.bookings || 1;
+
+  // Format hour to 12-hour format
+  const formatHour = (hour: number) => {
+    if (hour === 0) return '12 AM';
+    if (hour === 12) return '12 PM';
+    return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+  };
+
+  // Get color based on intensity
+  const getBarColor = (bookings: number) => {
+    const intensity = bookings / maxBookings;
+    if (intensity > 0.8) return "#6366F1"; // High - Indigo
+    if (intensity > 0.5) return "#8B5CF6"; // Medium - Violet
+    if (intensity > 0.25) return "#A855F7"; // Low-Medium - Purple
+    return "#C4B5FD"; // Low - Light purple
+  };
+
+  return (
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-cyan-500" />
+            <CardTitle className="text-lg">Peak Hours</CardTitle>
+          </div>
+          {peakHour && (
+            <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-medium">
+              Peak: {formatHour(peakHour.hour)}
+            </span>
+          )}
+        </div>
+        <CardDescription>Booking distribution throughout the day</CardDescription>
+      </CardHeader>
+      
+      <CardContent className="flex-1 pt-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={hourlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <XAxis 
+              dataKey="hour" 
+              tickFormatter={formatHour}
+              tick={{ fontSize: 10 }}
+              tickLine={false}
+              axisLine={false}
+              interval={2}
+            />
+            <YAxis 
+              tick={{ fontSize: 10 }}
+              tickLine={false}
+              axisLine={false}
+              width={35}
+            />
+            <Tooltip 
+              cursor={{ fill: 'transparent' }}
+              contentStyle={{ 
+                borderRadius: '12px', 
+                border: 'none', 
+                boxShadow: '0 10px 40px -10px rgba(0,0,0,0.2)',
+                padding: '12px'
+              }}
+              formatter={(value: number, name: string) => {
+                if (name === 'bookings') return [value, 'Bookings'];
+                return [`₹${value.toLocaleString('en-IN')}`, 'Revenue'];
+              }}
+              labelFormatter={(hour) => formatHour(Number(hour))}
+            />
+            <Bar 
+              dataKey="bookings" 
+              radius={[4, 4, 0, 0]}
+              maxBarSize={40}
+            >
+              {hourlyData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={getBarColor(entry.bookings)} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
 }

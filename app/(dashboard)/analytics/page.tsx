@@ -10,7 +10,7 @@ import { fetchWithAuth, getApiUrl } from "@/lib/api";
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
-  const [interval, setInterval] = useState("30"); // Default 30 days
+  const [interval, setInterval] = useState("30");
   const [dailyRevenue, setDailyRevenue] = useState<DailyRevenue[]>([]);
   const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenue[]>([]);
   const [topTurfs, setTopTurfs] = useState<TurfPerformance[]>([]);
@@ -21,32 +21,32 @@ export default function AnalyticsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-        const fetchJson = async (url: string) => {
-            const res = await fetchWithAuth(getApiUrl(url));
-            if (!res.ok) throw new Error(`Failed to fetch ${url}`);
-            return res.json();
-        };
+      const fetchJson = async (url: string) => {
+        const res = await fetchWithAuth(getApiUrl(url));
+        if (!res.ok) throw new Error(`Failed to fetch ${url}`);
+        return res.json();
+      };
 
-        const [daily, monthly, turfs, hours, segs, kpiData] = await Promise.all([
-            fetchJson(`/analytics/revenue/daily?interval=${interval}`),
-            fetchJson('/analytics/revenue/monthly'),
-            fetchJson(`/analytics/turfs/top?interval=${interval}`),
-            fetchJson(`/analytics/peak-hours?interval=${interval}`),
-            fetchJson('/analytics/customers/segmentation'),
-            fetchJson('/analytics/kpis')
-        ]);
+      const [daily, monthly, turfs, hours, segs, kpiData] = await Promise.all([
+        fetchJson(`/analytics/revenue/daily?interval=${interval}`),
+        fetchJson('/analytics/revenue/monthly'),
+        fetchJson(`/analytics/turfs/top?interval=${interval}`),
+        fetchJson(`/analytics/peak-hours?interval=${interval}`),
+        fetchJson('/analytics/customers/segmentation'),
+        fetchJson('/analytics/kpis')
+      ]);
 
-        setDailyRevenue(daily);
-        setMonthlyRevenue(monthly);
-        setTopTurfs(turfs);
-        setPeakHours(hours);
-        setSegments(segs);
-        setKpis(kpiData);
+      setDailyRevenue(daily);
+      setMonthlyRevenue(monthly);
+      setTopTurfs(turfs);
+      setPeakHours(hours);
+      setSegments(segs);
+      setKpis(kpiData);
 
     } catch (error) {
-        console.error("Failed to fetch analytics:", error);
+      console.error("Failed to fetch analytics:", error);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   }, [interval]);
 
@@ -55,40 +55,40 @@ export default function AnalyticsPage() {
   }, [fetchData]);
 
   return (
-    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-slate-50/50 min-h-screen">
-      <AnalyticsToolbar
-        interval={interval}
-        setInterval={setInterval}
-        onRefresh={fetchData}
-        loading={loading}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/50">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Toolbar */}
+        <AnalyticsToolbar
+          interval={interval}
+          setInterval={setInterval}
+          onRefresh={fetchData}
+          loading={loading}
+        />
 
-      {/* KPI Section */}
-      <KPICards data={kpis} loading={loading} />
-      {/* Main Charts Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 h-[400px]">
-        {/* Revenue Chart */}
-        <div className="col-span-4 lg:col-span-4 h-full">
+        {/* KPI Cards */}
+        <section>
+          <KPICards data={kpis} loading={loading} />
+        </section>
+
+        {/* Main Charts - Revenue & Turfs */}
+        <section className="grid gap-6 lg:grid-cols-5">
+          <div className="lg:col-span-3 min-h-[400px]">
             <RevenueChart dailyData={dailyRevenue} monthlyData={monthlyRevenue} />
-        </div>
+          </div>
+          <div className="lg:col-span-2 min-h-[400px]">
+            <TopTurfsChart data={topTurfs} />
+          </div>
+        </section>
 
-        {/* Top Turfs */}
-        <div className="col-span-4 lg:col-span-3 h-full">
-             <TopTurfsChart data={topTurfs} />
-        </div>
-      </div>
-
-      {/* Secondary Charts Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 h-[400px]">
-        {/* Customer Segments */}
-         <div className="col-span-4 lg:col-span-3 h-full">
+        {/* Secondary Charts - Segments & Peak Hours */}
+        <section className="grid gap-6 lg:grid-cols-5">
+          <div className="lg:col-span-2 min-h-[380px]">
             <CustomerSegmentsChart data={segments} />
-         </div>
-
-         {/* Peak Hours */}
-         <div className="col-span-4 lg:col-span-4 h-full">
+          </div>
+          <div className="lg:col-span-3 min-h-[380px]">
             <PeakHoursChart data={peakHours} />
-         </div>
+          </div>
+        </section>
       </div>
     </div>
   );
