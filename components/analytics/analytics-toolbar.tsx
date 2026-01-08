@@ -3,7 +3,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Calendar, RefreshCw, Download } from "lucide-react";
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 
 interface AnalyticsToolbarProps {
   interval: string;
@@ -37,16 +37,15 @@ export function AnalyticsToolbar({ interval, setInterval, onRefresh, loading, co
     if (!contentRef?.current) return;
     
     try {
-      const canvas = await html2canvas(contentRef.current, {
+      const dataUrl = await toPng(contentRef.current, {
         backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true,
-        logging: false
+        pixelRatio: 2,
+        cacheBust: true
       });
       
       const link = document.createElement('a');
       link.download = `analytics-${new Date().toISOString().split('T')[0]}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = dataUrl;
       link.click();
     } catch (error) {
       console.error('Failed to capture screenshot:', error);
