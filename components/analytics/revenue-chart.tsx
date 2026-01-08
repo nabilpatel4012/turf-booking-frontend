@@ -118,8 +118,8 @@ export function RevenueChart({ dailyData, monthlyData }: RevenueChartProps) {
               <ComposedChart data={formattedDaily} margin={{ top: 5, right: 10, left: -15, bottom: 5 }}>
                 <defs>
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10B981" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#10B981" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#16A34A" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#16A34A" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -153,15 +153,15 @@ export function RevenueChart({ dailyData, monthlyData }: RevenueChartProps) {
                 <Line
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#10B981"
+                  stroke="#16A34A"
                   strokeWidth={2.5}
                   dot={false}
-                  activeDot={{ r: 6, fill: "#10B981", stroke: "#fff", strokeWidth: 2 }}
+                  activeDot={{ r: 6, fill: "#16A34A", stroke: "#fff", strokeWidth: 2 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="revenue_7d_ma"
-                  stroke="#6366F1"
+                  stroke="#737373"
                   strokeWidth={1.5}
                   strokeDasharray="5 5"
                   dot={false}
@@ -176,8 +176,8 @@ export function RevenueChart({ dailyData, monthlyData }: RevenueChartProps) {
               <ComposedChart data={formattedMonthly} margin={{ top: 5, right: 10, left: -15, bottom: 5 }}>
                 <defs>
                   <linearGradient id="monthlyGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6366F1" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#6366F1" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#16A34A" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#16A34A" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -210,10 +210,10 @@ export function RevenueChart({ dailyData, monthlyData }: RevenueChartProps) {
                 <Line
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#6366F1"
+                  stroke="#16A34A"
                   strokeWidth={2.5}
-                  dot={{ r: 4, fill: "#6366F1", stroke: "#fff", strokeWidth: 2 }}
-                  activeDot={{ r: 6, fill: "#6366F1", stroke: "#fff", strokeWidth: 2 }}
+                  dot={{ r: 4, fill: "#16A34A", stroke: "#fff", strokeWidth: 2 }}
+                  activeDot={{ r: 6, fill: "#16A34A", stroke: "#fff", strokeWidth: 2 }}
                 />
               </ComposedChart>
             </ResponsiveContainer>

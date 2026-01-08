@@ -135,8 +135,8 @@ export function KPICards({ data, loading }: KPICardsProps) {
       value: revenue,
       trend: prevRevenue > 0 ? revenueGrowth : undefined,
       trendLabel: prevRevenue > 0 ? "vs last period" : "Last 30 days",
-      icon: <DollarSign className="h-5 w-5" style={{ color: "#10B981" }} />,
-      accentColor: "#10B981",
+      icon: <DollarSign className="h-5 w-5" style={{ color: "#16A34A" }} />,
+      accentColor: "#16A34A",
       format: "currency"
     },
     {
@@ -144,16 +144,16 @@ export function KPICards({ data, loading }: KPICardsProps) {
       value: bookings,
       trend: prevBookings > 0 ? bookingsGrowth : undefined,
       trendLabel: prevBookings > 0 ? "vs last period" : "Last 30 days",
-      icon: <Calendar className="h-5 w-5" style={{ color: "#6366F1" }} />,
-      accentColor: "#6366F1",
+      icon: <Calendar className="h-5 w-5" style={{ color: "#171717" }} />,
+      accentColor: "#171717",
       format: "number"
     },
     {
       title: "Avg. Booking Value",
       value: avgValue,
       trendLabel: "Per booking",
-      icon: <Wallet className="h-5 w-5" style={{ color: "#F59E0B" }} />,
-      accentColor: "#F59E0B",
+      icon: <Wallet className="h-5 w-5" style={{ color: "#16A34A" }} />,
+      accentColor: "#16A34A",
       format: "currency"
     },
     {
@@ -161,24 +161,24 @@ export function KPICards({ data, loading }: KPICardsProps) {
       value: activeCustomers,
       trend: prevCustomers > 0 ? customersGrowth : undefined,
       trendLabel: prevCustomers > 0 ? "vs last period" : "Last 30 days",
-      icon: <Users className="h-5 w-5" style={{ color: "#8B5CF6" }} />,
-      accentColor: "#8B5CF6",
+      icon: <Users className="h-5 w-5" style={{ color: "#404040" }} />,
+      accentColor: "#404040",
       format: "number"
     },
     {
       title: "Completion Rate",
       value: completionRate,
       trendLabel: "Bookings completed",
-      icon: <CheckCircle2 className="h-5 w-5" style={{ color: "#06B6D4" }} />,
-      accentColor: "#06B6D4",
+      icon: <CheckCircle2 className="h-5 w-5" style={{ color: "#171717" }} />,
+      accentColor: "#171717",
       format: "percent"
     },
     {
       title: "Cancellation Rate",
       value: cancellationRate,
       trendLabel: "Bookings cancelled",
-      icon: <XCircle className="h-5 w-5" style={{ color: "#EF4444" }} />,
-      accentColor: "#EF4444",
+      icon: <XCircle className="h-5 w-5" style={{ color: "#DC2626" }} />,
+      accentColor: "#DC2626",
       format: "percent"
     }
   ];

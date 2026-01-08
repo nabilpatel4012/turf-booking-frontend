@@ -10,11 +10,11 @@ import { Trophy, Users, Clock } from "lucide-react";
 // ============================================
 
 const TURF_COLORS = [
-  "#6366F1", // Indigo
-  "#8B5CF6", // Violet
-  "#A855F7", // Purple
-  "#D946EF", // Fuchsia
-  "#EC4899", // Pink
+  "#171717", // Black
+  "#404040", // Dark gray
+  "#525252", // Gray
+  "#737373", // Medium gray
+  "#A3A3A3", // Light gray
 ];
 
 interface TurfBarData {
@@ -136,12 +136,13 @@ export function TopTurfsChart({ data }: { data?: TurfPerformance[] }) {
 // ============================================
 
 const SEGMENT_COLORS: Record<string, string> = {
-  "Champions": "#10B981",
-  "Loyalists": "#6366F1", 
-  "Potential Loyalists": "#8B5CF6",
-  "Hibernating": "#F59E0B",
-  "At Risk": "#EF4444",
-  "Others": "#94A3B8"
+  "Champions": "#16A34A",
+  "Loyal Customers": "#171717", 
+  "Promising": "#404040",
+  "Hibernating": "#737373",
+  "At Risk": "#DC2626",
+  "Big Spenders": "#16A34A",
+  "Regular": "#A3A3A3"
 };
 
 export function CustomerSegmentsChart({ data }: { data?: CustomerSegment[] }) {
@@ -164,10 +165,10 @@ export function CustomerSegmentsChart({ data }: { data?: CustomerSegment[] }) {
 
   const formattedData = data.map(d => ({
     segment: d.customer_segment,
-    count: parseInt(d.user_count) || 0,
-    avgLtv: parseFloat(d.avg_ltv) || 0,
+    count: parseInt(d.customer_count) || 0,
+    avgSpent: parseFloat(d.avg_total_spent) || 0,
     avgDays: parseFloat(d.avg_days_since_last_booking) || 0,
-    color: SEGMENT_COLORS[d.customer_segment] || SEGMENT_COLORS["Others"]
+    color: SEGMENT_COLORS[d.customer_segment] || SEGMENT_COLORS["Regular"]
   }));
 
   const totalCustomers = formattedData.reduce((sum, d) => sum + d.count, 0);
@@ -206,7 +207,7 @@ export function CustomerSegmentsChart({ data }: { data?: CustomerSegment[] }) {
                   </div>
                   <div className="flex items-center gap-3 text-xs">
                     <span className="text-muted-foreground">
-                      LTV: ₹{segment.avgLtv.toLocaleString('en-IN')}
+                      Spent: ₹{segment.avgSpent.toLocaleString('en-IN')}
                     </span>
                     <span className="font-bold">{segment.count}</span>
                   </div>
@@ -290,10 +291,10 @@ export function PeakHoursChart({ data }: { data?: PeakHour[] }) {
   // Get color based on intensity
   const getBarColor = (bookings: number) => {
     const intensity = bookings / maxBookings;
-    if (intensity > 0.8) return "#6366F1"; // High - Indigo
-    if (intensity > 0.5) return "#8B5CF6"; // Medium - Violet
-    if (intensity > 0.25) return "#A855F7"; // Low-Medium - Purple
-    return "#C4B5FD"; // Low - Light purple
+    if (intensity > 0.8) return "#171717"; // High - Black
+    if (intensity > 0.5) return "#404040"; // Medium - Dark gray
+    if (intensity > 0.25) return "#737373"; // Low-Medium - Gray
+    return "#A3A3A3"; // Low - Light gray
   };
 
   return (
@@ -305,7 +306,7 @@ export function PeakHoursChart({ data }: { data?: PeakHour[] }) {
             <CardTitle className="text-lg">Peak Hours</CardTitle>
           </div>
           {peakHour && (
-            <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-medium">
+            <span className="text-xs bg-neutral-100 text-neutral-700 px-2 py-1 rounded-full font-medium">
               Peak: {formatHour(peakHour.hour)}
             </span>
           )}

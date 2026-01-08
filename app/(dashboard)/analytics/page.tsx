@@ -41,7 +41,7 @@ export default function AnalyticsPage() {
       setTopTurfs(turfs);
       setPeakHours(hours);
       setSegments(segs);
-      setKpis(kpiData);
+      setKpis(kpiData[0] || null);
 
     } catch (error) {
       console.error("Failed to fetch analytics:", error);

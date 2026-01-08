@@ -43,10 +43,10 @@ export interface PeakHour {
 }
 
 export interface CustomerSegment {
-  customer_segment: "Champions" | "Loyalists" | "Potential Loyalists" | "Hibernating" | "At Risk" | "Others";
-  user_count: string;
-  avg_ltv: string;
-  total_bookings: string;
+  customer_segment: "Champions" | "Loyal Customers" | "Promising" | "At Risk" | "Hibernating" | "Big Spenders" | "Regular";
+  customer_count: string;
+  avg_total_spent: string;
+  avg_bookings: string;
   avg_days_since_last_booking: string;
 }
 
