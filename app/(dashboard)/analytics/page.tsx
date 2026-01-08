@@ -1,7 +1,7 @@
 "use client";
 
 import { AnalyticsToolbar } from "@/components/analytics/analytics-toolbar";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { DailyRevenue, MonthlyRevenue, TurfPerformance, PeakHour, CustomerSegment, KPIOverview } from "@/types/analytics";
 import { KPICards } from "@/components/analytics/kpi-cards";
 import { RevenueChart } from "@/components/analytics/revenue-chart";
@@ -17,6 +17,8 @@ export default function AnalyticsPage() {
   const [peakHours, setPeakHours] = useState<PeakHour[]>([]);
   const [segments, setSegments] = useState<CustomerSegment[]>([]);
   const [kpis, setKpis] = useState<KPIOverview | null>(null);
+  
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -55,23 +57,25 @@ export default function AnalyticsPage() {
   }, [fetchData]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/50">
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Toolbar */}
-        <AnalyticsToolbar
-          interval={interval}
-          setInterval={setInterval}
-          onRefresh={fetchData}
-          loading={loading}
-        />
+    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4">
+      {/* Toolbar */}
+      <AnalyticsToolbar
+        interval={interval}
+        setInterval={setInterval}
+        onRefresh={fetchData}
+        loading={loading}
+        contentRef={contentRef}
+      />
 
+      {/* Content to capture for screenshot */}
+      <div ref={contentRef} className="space-y-4 sm:space-y-6">
         {/* KPI Cards */}
         <section>
           <KPICards data={kpis} loading={loading} />
         </section>
 
         {/* Main Charts - Revenue & Turfs */}
-        <section className="grid gap-6 lg:grid-cols-5">
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-5">
           <div className="lg:col-span-3 min-h-[400px]">
             <RevenueChart dailyData={dailyRevenue} monthlyData={monthlyRevenue} />
           </div>
@@ -81,7 +85,7 @@ export default function AnalyticsPage() {
         </section>
 
         {/* Secondary Charts - Segments & Peak Hours */}
-        <section className="grid gap-6 lg:grid-cols-5">
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-5">
           <div className="lg:col-span-2 min-h-[380px]">
             <CustomerSegmentsChart data={segments} />
           </div>
