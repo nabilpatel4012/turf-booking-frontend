@@ -53,7 +53,7 @@ export default function TurfSettingsTab() {
   const fetchTurfs = async () => {
     setIsLoading((prev) => ({ ...prev, turfs: true }));
     try {
-      const res = await fetchWithAuth(getApiUrl("/turfs"));
+      const res = await fetchWithAuth(getApiUrl("/turfs/admin/my-turfs"));
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch turfs");
       setTurfs(data.data);
