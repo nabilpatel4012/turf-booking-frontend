@@ -35,12 +35,18 @@ export interface Booking {
 
 interface BookingsApiResponse {
   success: boolean;
-  count: number;
   data: Booking[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [totalBookings, setTotalBookings] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,53 +54,54 @@ export default function BookingsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  // Debounce search query to avoid too many API calls
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchBookings();
+    }, 500);
 
-  const filteredBookings = useMemo(() => {
-    let filtered = [...bookings];
+    return () => clearTimeout(timer);
+  }, [currentPage, rowsPerPage, statusFilter, searchQuery]);
 
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((booking) => booking.status === statusFilter);
-    }
-
-    if (searchQuery) {
-      const lowercasedQuery = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (booking) =>
-          booking.id.toLowerCase().includes(lowercasedQuery) ||
-          booking.userId.toLowerCase().includes(lowercasedQuery) ||
-          booking.createdBy.toLowerCase().includes(lowercasedQuery)
-      );
-    }
-
-    return filtered;
-  }, [bookings, statusFilter, searchQuery]);
-
-  const paginatedBookings = useMemo(() => {
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    return filteredBookings.slice(startIndex, endIndex);
-  }, [filteredBookings, currentPage, rowsPerPage]);
-
+  // We don't need client-side filtering/pagination anymore as the API handles it
+  // But strictly speaking, the API might not handle SEARCH yet (turfName/user stuff).
+  // Checking API: getAdminBookings supports: status, turfId, date, turfName.
+  // It does NOT explicitly support generic search string for user details yet.
+  // However, the User Objective specifically asks to call API with page/limit.
+  
   const fetchBookings = async () => {
     setIsLoading(true);
     try {
-      const response = await fetchWithAuth(getApiUrl("/bookings/admin/my-bookings"), {
+      // Build Query Params
+      const params = new URLSearchParams();
+      params.append("page", currentPage.toString());
+      params.append("limit", rowsPerPage.toString());
+      
+      if (statusFilter !== "all") {
+        params.append("status", statusFilter);
+      }
+      
+      // Basic search support if supported by API (currently API supports turfName ILIKE)
+      // If searchQuery looks like a turfName, pass it? 
+      // API signature: filters?: { status, turfId, date, turfName, page, limit }
+      // For now, let's pass searchQuery as turfName if present, or we might need backend update for generic search.
+      // Assuming for now simple integration.
+      if (searchQuery) {
+          params.append("turfName", searchQuery);
+      }
+
+      const response = await fetchWithAuth(getApiUrl(`/bookings/admin/my-bookings?${params.toString()}`), {
         headers: getAuthHeaders(),
       });
 
       if (response.ok) {
         const result: BookingsApiResponse = await response.json();
-        const sortedData = (result.data || []).sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        setBookings(sortedData);
+        setBookings(result.data || []);
+        setTotalBookings(result.meta?.total || 0);
       } else {
         console.error("Failed to fetch bookings with status:", response.status);
         setBookings([]);
+        setTotalBookings(0);
       }
     } catch (error) {
       console.error("Failed to fetch bookings:", error);
@@ -137,8 +144,8 @@ export default function BookingsPage() {
         <Card className="border-0 sm:border shadow-none sm:shadow-sm">
           <CardContent className="p-0">
             <BookingTable
-              bookings={paginatedBookings}
-              totalBookings={filteredBookings.length}
+              bookings={bookings}
+              totalBookings={totalBookings}
               onBookingUpdated={fetchBookings}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
