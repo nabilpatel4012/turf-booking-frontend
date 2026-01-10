@@ -36,28 +36,55 @@ export default function AnnouncementsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] =
     useState<Announcement | null>(null);
+  const [hasTurfs, setHasTurfs] = useState<boolean | null>(null);
 
   useEffect(() => {
-    fetchAnnouncements();
+    fetchData();
   }, []);
 
-  const fetchAnnouncements = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetchWithAuth(getApiUrl("/announcements"), {
-        headers: getAuthHeaders(),
-      });
+      // Parallel fetch for announcements and turfs check
+      const [announcementsRes, turfsRes] = await Promise.all([
+        fetchWithAuth(getApiUrl("/announcements"), { headers: getAuthHeaders() }),
+        fetchWithAuth(getApiUrl("/turfs/admin/my-turfs"), { headers: getAuthHeaders() })
+      ]);
 
-      if (response.ok) {
-        const data = await response.json();
+      if (announcementsRes.ok) {
+        const data = await announcementsRes.json();
         setAnnouncements(data);
       }
+
+      if (turfsRes.ok) {
+        const turfsData = await turfsRes.json();
+        // Check if data exists and has length
+        setHasTurfs(Array.isArray(turfsData.data) && turfsData.data.length > 0);
+      } else {
+          // If 404/error, assume no turfs or issue
+          setHasTurfs(false);
+      }
+
     } catch (error) {
-      console.error("[v0] Failed to fetch announcements:", error);
+      console.error("[v0] Failed to fetch data:", error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const fetchAnnouncements = async () => {
+      // Helper for dialog callbacks to refresh only announcements
+      try {
+        const response = await fetchWithAuth(getApiUrl("/announcements"), {
+            headers: getAuthHeaders(),
+        });
+        if (response.ok) {
+            const data = await response.json();
+            setAnnouncements(data);
+        }
+      } catch(e) { console.error(e) }
+  }
+
 
   const handleEdit = (announcement: Announcement) => {
     setSelectedAnnouncement(announcement);
@@ -68,6 +95,25 @@ export default function AnnouncementsPage() {
     setSelectedAnnouncement(announcement);
     setDeleteDialogOpen(true);
   };
+
+  if (!isLoading && hasTurfs === false) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center space-y-6">
+            <div className="bg-muted/30 p-8 rounded-full">
+                <Plus className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <div className="space-y-2 max-w-md">
+                <h1 className="text-2xl font-bold">No Venues Registered Yet</h1>
+                <p className="text-muted-foreground">
+                    You need to register at least one venue (Turf) before you can post announcements.
+                </p>
+            </div>
+            <Button asChild size="lg" className="mt-4">
+                <a href="/venues">Create a Venue</a>
+            </Button>
+        </div>
+    );
+  }
 
   return (
     <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-slate-50/50 min-h-screen">

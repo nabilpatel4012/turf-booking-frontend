@@ -81,7 +81,7 @@ export default function BookingsPage() {
   const fetchBookings = async () => {
     setIsLoading(true);
     try {
-      const response = await fetchWithAuth(getApiUrl("/bookings"), {
+      const response = await fetchWithAuth(getApiUrl("/bookings/admin/my-bookings"), {
         headers: getAuthHeaders(),
       });
 

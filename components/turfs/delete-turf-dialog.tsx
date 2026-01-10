@@ -40,7 +40,7 @@ export function DeleteTurfDialog({
     setError("");
 
     try {
-      const response = await fetchWithAuth(getApiUrl(`/turfs/${turf.id}`), {
+      const response = await fetchWithAuth(getApiUrl(`/turfs/admin/${turf.id}`), {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
