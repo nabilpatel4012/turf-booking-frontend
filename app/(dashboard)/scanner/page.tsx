@@ -15,7 +15,7 @@ import {
   Upload,
   Image as ImageIcon,
 } from "lucide-react";
-import { get } from "@/lib/api";
+import { fetchWithAuth, get, getApiUrl } from "@/lib/api";
 import { toast } from "sonner";
 import {
   Select,
@@ -146,8 +146,8 @@ export default function ScannerPage() {
         throw new Error("Invalid QR Code: Missing Turf ID");
       }
 
-      const response = await get(
-        `/bookings/verify-qr?turfId=${turfId}&bookingId=${bookingId || ""}&orderId=${orderId || ""}&paymentId=${paymentId || ""}`
+      const response = await fetchWithAuth(
+        getApiUrl(`/bookings/verify-qr?turfId=${turfId}&bookingId=${bookingId || ""}&orderId=${orderId || ""}&paymentId=${paymentId || ""}`)
       );
 
       if (!response.ok) {
