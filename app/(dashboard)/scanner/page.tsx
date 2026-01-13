@@ -68,8 +68,24 @@ export default function ScannerPage() {
     Html5Qrcode.getCameras()
       .then((devices) => {
         if (devices && devices.length) {
-          setCameras(devices.map(d => ({ id: d.id, label: d.label || `Camera ${d.id.slice(0, 5)}...` })));
-          setSelectedCamera(devices[0].id);
+          const formattedCameras = devices.map(d => {
+            let label = d.label || `Camera ${d.id.slice(0, 5)}...`;
+            // Simplify labels
+            if (label.toLowerCase().includes("back") || label.toLowerCase().includes("environment")) {
+                label = "Back Camera";
+                if (devices.length > 2) label += ` (${d.label})`; // Disambiguate if multiple
+            } else if (label.toLowerCase().includes("front") || label.toLowerCase().includes("user")) {
+                label = "Front Camera";
+            }
+            return { id: d.id, label };
+          });
+          
+          setCameras(formattedCameras);
+          
+          // Prefer back camera by default
+          const backCamera = formattedCameras.find(c => c.label.includes("Back"));
+          setSelectedCamera(backCamera ? backCamera.id : formattedCameras[0].id);
+          
           setPermissionGranted(true);
         }
       })
@@ -122,11 +138,17 @@ export default function ScannerPage() {
   };
 
   const onScanSuccess = async (decodedText: string) => {
+    // Prevent multiple calls
     if (verifying) return;
 
     try {
-      await stopScanning();
+      // Stop scanning immediately
+      if (scannerRef.current?.isScanning) {
+          await stopScanning();
+      }
+      
       setVerifying(true);
+      toast.info("Verifying QR Code...");
 
       // Parse URL parameters
       let params = "";
@@ -157,8 +179,14 @@ export default function ScannerPage() {
 
       const data = await response.json();
       setResult(data);
+      if (data.valid) {
+          toast.success("Booking Verified");
+      } else {
+          toast.error(data.message || "Invalid Booking");
+      }
     } catch (error: any) {
       console.error("Verification Error:", error);
+      toast.error(error.message || "Failed to verify booking");
       setResult({
         valid: false,
         message: error.message || "Failed to verify booking",
@@ -171,25 +199,51 @@ export default function ScannerPage() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !scannerRef.current) return;
+    if (!file) return;
+    
+    // Ensure scanner instance exists
+    if (!scannerRef.current) {
+        scannerRef.current = new Html5Qrcode("reader", {
+            verbose: false,
+            formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
+        });
+    }
 
     setVerifying(true);
     setResult(null);
     setScanning(false);
 
-    scannerRef.current
-      .scanFile(file, true)
-      .then((decodedText) => {
-        onScanSuccess(decodedText);
-      })
-      .catch((err) => {
-        console.error("Error scanning file", err);
-        toast.error("Could not read QR code from image");
-        setVerifying(false);
-      });
-      
+    // If already scanning via camera, stop it first
+    if (scannerRef.current.isScanning) {
+        scannerRef.current.stop().then(() => {
+             scanImageFile(file);
+        }).catch(err => {
+             console.error("Failed to stop camera for file scan", err);
+             scanImageFile(file); // Try anyway
+        });
+    } else {
+        scanImageFile(file);
+    }
+    
     // Reset input
     e.target.value = "";
+  };
+
+  const scanImageFile = (file: File) => {
+      if (!scannerRef.current) return;
+      
+      scannerRef.current
+        .scanFile(file, true)
+        .then((decodedText) => {
+          onScanSuccess(decodedText);
+        })
+        .catch((err) => {
+          console.error("Error scanning file", err);
+          toast.error("Could not find a valid QR code in this image", {
+              description: "Please ensure the image is clear and contains a QR code."
+          });
+          setVerifying(false);
+        });
   };
 
   const handleReset = () => {
@@ -198,29 +252,35 @@ export default function ScannerPage() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-slate-50/50 min-h-screen">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="space-y-4 p-4 bg-slate-50/50 min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">QR Scanner</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-             Scan user QR codes to verify bookings
+          <h1 className="text-3xl font-bold tracking-tight">QR Scanner</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+             Scan user QR codes or upload an image to verify bookings
           </p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+        <div className="flex gap-2">
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
               <ImageIcon className="mr-2 h-4 w-4" />
-              Scan Image
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              Upload QR Image
+            </Button>
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                <MoreVertical className="h-5 w-5" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleReset}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Reset Scanner
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
       </div>
-      <Separator className="hidden sm:block" />
+      <Separator />
 
       <input
         type="file"
@@ -230,41 +290,61 @@ export default function ScannerPage() {
         onChange={handleFileUpload}
       />
 
-      <Card>
-        <CardContent className="p-6">
-          {/* Scanner View */}
-          <div className={`${result || verifying ? "hidden" : "block"}`}>
-            <div 
-                id="reader" 
-                className="w-full overflow-hidden rounded-lg bg-black/5 min-h-[300px] mb-4"
-            ></div>
-
-            {!permissionGranted && cameras.length === 0 && (
-                 <div className="text-center py-8">
-                    <Camera className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Requesting camera access...</p>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+        <Card className="md:col-span-1 lg:col-span-1 h-fit">
+            <CardHeader>
+                <CardTitle className="text-lg">Scanner</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+            <div className={`relative overflow-hidden rounded-lg bg-black aspect-square ${result || verifying ? "hidden" : "block"}`}>
+                <div id="reader" className="w-full h-full"></div>
+            </div>
+            
+            {(result || verifying) && (
+                 <div className="aspect-square bg-slate-100 rounded-lg flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-slate-300">
+                    {verifying ? (
+                        <>
+                         <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
+                         <p className="font-medium text-slate-600">Verifying...</p>
+                        </>
+                    ) : (
+                         <>
+                            {result?.valid ? (
+                                <CheckCircle className="h-16 w-16 text-green-500 mb-3" />
+                            ) : (
+                                <XCircle className="h-16 w-16 text-destructive mb-3" />
+                            )}
+                            <p className="font-medium text-slate-900">{result?.message}</p>
+                            <Button variant="outline" className="mt-4" onClick={handleReset}>
+                                Scan Again
+                            </Button>
+                         </>
+                    )}
                  </div>
             )}
 
-            <div className="space-y-4">
-              {cameras.length > 0 && (
+            {!scanning && !verifying && !result && cameras.length > 0 && (
+                <Button className="w-full" size="lg" onClick={startScanning}>
+                    <Camera className="mr-2 h-4 w-4" />
+                    Start Camera
+                </Button>
+            )}
+
+            {scanning && (
+                 <Button variant="destructive" className="w-full" onClick={stopScanning}>
+                    Stop Camera
+                </Button>
+            )}
+
+             {cameras.length > 0 && (
                 <Select
                   value={selectedCamera}
                   onValueChange={(val) => {
                       setSelectedCamera(val);
-                      // If scanning, restart with new camera
                       if (scanning) {
                           stopScanning().then(() => {
-                              // Small delay to ensure stop completes
-                              setTimeout(() => {
-                                  // Update selected camera state first
-                                  // Then start
-                                  // Actually state update is async, so we rely on useEffect or just call start with new val
-                                  // But startScanning uses selectedCamera state.
-                                  // We can pass val directly to a modified start function or just wait.
-                                  // Let's just stop. User has to click start again? 
-                                  // Or auto restart.
-                              }, 100);
+                              // User must restart manually or we could auto-restart
+                              // For simplicity, let them click start
                           });
                       }
                   }}
@@ -282,124 +362,107 @@ export default function ScannerPage() {
                   </SelectContent>
                 </Select>
               )}
+            </CardContent>
+        </Card>
 
-              {!scanning ? (
-                <Button 
-                    className="w-full" 
-                    size="lg" 
-                    onClick={startScanning}
-                    disabled={cameras.length === 0}
-                >
-                  <Camera className="mr-2 h-4 w-4" />
-                  Start Scanning
-                </Button>
-              ) : (
-                <Button 
-                    variant="destructive" 
-                    className="w-full" 
-                    size="lg" 
-                    onClick={stopScanning}
-                >
-                  Stop Scanning
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Verifying State */}
-          {verifying && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-              <p className="text-lg font-medium">Verifying Booking...</p>
-            </div>
-          )}
-
-          {/* Result View */}
-          {result && (
-            <div className="flex flex-col items-center text-center space-y-6">
-              {result.valid ? (
-                result.paymentStatus === "Pending" ? (
-                  <div className="flex flex-col items-center text-yellow-500">
-                    <AlertTriangle className="h-16 w-16 mb-2" />
-                    <h2 className="text-2xl font-bold">Payment Pending</h2>
-                    <p className="text-muted-foreground">{result.message}</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center text-green-500">
-                    <CheckCircle className="h-16 w-16 mb-2" />
-                    <h2 className="text-2xl font-bold">Access Granted</h2>
-                    <p className="text-muted-foreground">{result.message}</p>
-                  </div>
-                )
-              ) : (
-                <div className="flex flex-col items-center text-destructive">
-                  <XCircle className="h-16 w-16 mb-2" />
-                  <h2 className="text-2xl font-bold">Access Denied</h2>
-                  <p className="text-muted-foreground">{result.message}</p>
-                </div>
-              )}
-
-              {result.booking && (
-                <div className="w-full bg-muted p-4 rounded-lg text-left space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Guest:</span>
-                    <span className="font-medium">
-                      {result.booking.user?.name || "Unknown"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Phone:</span>
-                    <span className="font-medium">
-                      {result.booking.user?.phone || "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Date:</span>
-                    <span className="font-medium">{result.booking.date}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Time:</span>
-                    <span className="font-medium">
-                      {new Date(result.booking.startTime.replace("Z", "")).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
-                      -{" "}
-                      {new Date(result.booking.endTime.replace("Z", "")).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Amount:</span>
-                    <span className="font-medium">₹{result.booking.price}</span>
-                  </div>
-                  {result.paymentStatus && (
-                    <div className="flex justify-between border-t pt-2 mt-2">
-                      <span className="text-muted-foreground">Payment:</span>
-                      <span
-                        className={`font-bold ${
-                          result.paymentStatus === "Paid"
-                            ? "text-green-600"
-                            : "text-yellow-600"
-                        }`}
-                      >
-                        {result.paymentStatus}
-                      </span>
+        {/* Result Details */}
+        <Card className="md:col-span-1 lg:col-span-2">
+            <CardHeader>
+                <CardTitle>Booking Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {!result ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+                        <Camera className="h-10 w-10 mb-2 opacity-20" />
+                        <p>Scan a QR code to view booking details</p>
                     </div>
-                  )}
-                </div>
-              )}
+                ) : (
+                    <div className="space-y-6">
+                        <div className={`p-4 rounded-lg border ${
+                            result.valid 
+                                ? "bg-green-50 border-green-200 text-green-800" 
+                                : "bg-red-50 border-red-200 text-red-800"
+                        } flex items-start gap-3`}>
+                            {result.valid ? (
+                                <CheckCircle className="h-6 w-6 shrink-0 mt-0.5" />
+                            ) : (
+                                <AlertTriangle className="h-6 w-6 shrink-0 mt-0.5" />
+                            )}
+                            <div>
+                                <h3 className="font-bold text-lg">{result.valid ? "Verified Successfully" : "Verification Failed"}</h3>
+                                <p>{result.message}</p>
+                            </div>
+                        </div>
 
-              <Button onClick={handleReset} className="w-full" size="lg">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Scan Another
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                        {result.booking && (
+                            <div className="grid gap-6 sm:grid-cols-2">
+                                <div className="space-y-4">
+                                    <div>
+                                        <h4 className="text-sm font-medium text-muted-foreground mb-1">Guest Info</h4>
+                                        <p className="text-lg font-semibold">{result.booking.user?.name || "Guest"}</p>
+                                        <p className="text-sm">{result.booking.user?.phone || "No phone"}</p>
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-medium text-muted-foreground mb-1">Schedule</h4>
+                                        <p className="font-medium">{result.booking.date}</p>
+                                        <p className="text-lg">
+                                            {new Date(result.booking.startTime.replace("Z", "")).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
+                                            {" - "} 
+                                            {new Date(result.booking.endTime.replace("Z", "")).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                     <div>
+                                        <h4 className="text-sm font-medium text-muted-foreground mb-1">Status</h4>
+                                        <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                                            {result.booking.status}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-50 p-4 rounded-lg space-y-3">
+                                    <h4 className="font-semibold flex items-center gap-2">
+                                        Payment Details
+                                    </h4>
+                                    <Separator />
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Total Amount</span>
+                                            <span className="font-medium">₹{result.booking.totalAmount}</span>
+                                        </div>
+                                        <div className="flex justify-between text-green-600">
+                                            <span>Paid Amount</span>
+                                            <span className="font-bold">₹{result.booking.paidAmount || 0}</span>
+                                        </div>
+                                        <Separator />
+                                        <div className="flex justify-between text-lg">
+                                            <span className="font-medium">Pending Amount</span>
+                                            <span className={`font-bold ${
+                                                (result.booking.totalAmount - (result.booking.paidAmount || 0)) > 0 
+                                                ? "text-red-600" 
+                                                : "text-green-600"
+                                            }`}>
+                                                ₹{result.booking.totalAmount - (result.booking.paidAmount || 0)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    {result.paymentStatus && (
+                                        <div className={`mt-2 text-center p-2 rounded text-sm font-bold ${
+                                            result.paymentStatus === "Paid" 
+                                            ? "bg-green-100 text-green-700" 
+                                            : "bg-yellow-100 text-yellow-700"
+                                        }`}>
+                                            Status: {result.paymentStatus}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
