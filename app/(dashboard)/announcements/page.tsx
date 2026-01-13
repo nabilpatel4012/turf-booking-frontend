@@ -11,6 +11,17 @@ import { Plus } from "lucide-react";
 import { fetchWithAuth, getApiUrl, getAuthHeaders } from "@/lib/api";
 import { Separator } from "@/components/ui/separator";
 
+
+interface Turf {
+  id: string;
+}
+
+interface TurfsApiResponse {
+  success: boolean;
+  count: number;
+  data: Turf[];
+}
+
 interface Announcement {
   id: string;
   turfId?: string | null;
@@ -57,9 +68,13 @@ export default function AnnouncementsPage() {
       }
 
       if (turfsRes.ok) {
-        const turfsData = await turfsRes.json();
+        const turfsData = (await turfsRes.json()) as TurfsApiResponse;
         // Check if data exists and has length
-        setHasTurfs(Array.isArray(turfsData.data) && turfsData.data.length > 0);
+        setHasTurfs(
+          turfsData.success &&
+            Array.isArray(turfsData.data) &&
+            turfsData.data.length > 0
+        );
       } else {
           // If 404/error, assume no turfs or issue
           setHasTurfs(false);
