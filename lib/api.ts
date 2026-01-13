@@ -42,7 +42,7 @@ export async function fetchWithAuth(
   if (response.status === 401 && !url.includes("/refresh-token")) {
     console.log("[Auth] Access token expired, attempting refresh...");
 
-    const refreshResponse = await fetch(getApiUrl("/auth/refresh-token"), {
+    const refreshResponse = await fetch(getApiUrl("/auth/admin/refresh-token"), {
       method: "POST",
       credentials: "include",
     });

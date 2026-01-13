@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Check authentication status by trying to refresh token
   const checkAuth = async () => {
     try {
-      const response = await fetchWithAuth(getApiUrl("/auth/refresh-token"), {
+      const response = await fetchWithAuth(getApiUrl("/auth/admin/refresh-token"), {
         method: "POST",
         credentials: "include", // Send cookies
       });
