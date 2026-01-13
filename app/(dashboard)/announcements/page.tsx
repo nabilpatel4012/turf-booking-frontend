@@ -64,7 +64,15 @@ export default function AnnouncementsPage() {
 
       if (announcementsRes.ok) {
         const data = await announcementsRes.json();
-        setAnnouncements(data);
+        // Handle both direct array and wrapped response formats
+        if (Array.isArray(data)) {
+          setAnnouncements(data);
+        } else if (data && Array.isArray(data.data)) {
+           setAnnouncements(data.data);
+        } else {
+           console.warn("Unexpected announcements format:", data);
+           setAnnouncements([]);
+        }
       }
 
       if (turfsRes.ok) {
@@ -95,7 +103,13 @@ export default function AnnouncementsPage() {
         });
         if (response.ok) {
             const data = await response.json();
-            setAnnouncements(data);
+             if (Array.isArray(data)) {
+                setAnnouncements(data);
+            } else if (data && Array.isArray(data.data)) {
+                setAnnouncements(data.data);
+            } else {
+                setAnnouncements([]);
+            }
         }
       } catch(e) { console.error(e) }
   }
